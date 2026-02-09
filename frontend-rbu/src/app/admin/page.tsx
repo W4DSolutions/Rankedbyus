@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AdminActionButtons } from "@/components/AdminActionButtons";
+import { AdminReviewActionButtons } from "@/components/AdminReviewActionButtons";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,18 @@ export default async function AdminPage() {
         .order('created_at', { ascending: false });
 
     const pendingSubmissions = pendingItems || [];
+
+    // Fetch pending reviews
+    const { data: pendingReviewsData } = await supabase
+        .from('reviews')
+        .select(`
+            *,
+            items:item_id (name)
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+    const pendingReviews = pendingReviewsData || [];
 
     // Fetch stats using admin client to get accurate counts
     const { count: totalApproved } = await supabase
@@ -67,8 +80,12 @@ export default async function AdminPage() {
                     <h2 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h2>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-6">
-                            <div className="text-sm text-slate-400">Pending Reviews</div>
+                            <div className="text-sm text-slate-400">Pending Tools</div>
                             <div className="mt-2 text-3xl font-bold text-yellow-400">{pendingSubmissions.length}</div>
+                        </div>
+                        <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-6">
+                            <div className="text-sm text-slate-400">Pending Reviews</div>
+                            <div className="mt-2 text-3xl font-bold text-blue-400">{pendingReviews.length}</div>
                         </div>
                         <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-6">
                             <div className="text-sm text-slate-400">Total Tools</div>
@@ -144,6 +161,54 @@ export default async function AdminPage() {
                             <div className="text-5xl mb-4">✓</div>
                             <h3 className="text-xl font-semibold text-white">All caught up!</h3>
                             <p className="mt-2 text-slate-400">No pending submissions to review.</p>
+                        </div>
+                    )}
+                </div>
+            </section>
+            {/* Pending Reviews */}
+            <section className="py-12 bg-slate-900/40">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-white">Review Moderation</h2>
+                        <div className="text-sm text-slate-400">
+                            {pendingReviews.length} awaiting approval
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {pendingReviews.map((review: any) => (
+                            <div
+                                key={review.id}
+                                className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-5"
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">
+                                            For: {review.items?.name}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-slate-600'}>
+                                                    ★
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <AdminReviewActionButtons id={review.id} />
+                                </div>
+                                <p className="text-sm text-slate-300 italic">
+                                    "{review.comment || 'No comment provided'}"
+                                </p>
+                                <div className="mt-4 text-[10px] text-slate-500 font-medium">
+                                    Submitted on {new Date(review.created_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {pendingReviews.length === 0 && (
+                        <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-12 text-center text-slate-400">
+                            No reviews to moderate.
                         </div>
                     )}
                 </div>
