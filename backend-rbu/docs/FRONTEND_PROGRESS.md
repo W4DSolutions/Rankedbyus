@@ -66,7 +66,6 @@
 ## 📂 Project Structure
 
 ```
-web/
 ├── src/
 │   ├── app/
 │   │   ├── api/
@@ -79,8 +78,6 @@ web/
 │   │   ├── layout.tsx                ✅ Root layout
 │   │   └── page.tsx                  ✅ Landing page
 │   └── components/
-│       ├── ui/                        🚧 TODO: Reusable components
-│       └── layout/                    🚧 TODO: Layout components
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts                 ✅ Client-side Supabase

@@ -5,29 +5,21 @@ Generated: February 9, 2026
 ```
 RankedByUs/
 │
-├── 📄 README.md                          # Main project documentation
+├── 📁 frontend-rbu/                  # 🌐 Next.js Application (Vercel Root)
+│   ├── 📁 src/                       # App Router & Logic
+│   ├── 📁 public/                    # Static Assets
+│   ├── 📁 lib/                       # Utilities & Clients
+│   ├── 📁 types/                      # TypeScript Definitions
+│   ├── 📄 package.json               # Dependencies
+│   └── ...                           # Config files
 │
-├── 📁 docs/                              # 📚 All documentation
-│   ├── BUILD_SUMMARY.md                 # What was built today
-│   ├── COMPLETION_REPORT.md             # Final delivery report
-│   ├── FRONTEND_PROGRESS.md             # Development tracker
-│   ├── NEXT_STEPS.md                    # Supabase integration guide
-│   ├── RANKED_BY_US_MASTER_PLAN.md      # Full strategy & architecture
-│   └── TESTING_GUIDE.md                 # QA testing checklist
+├── 📁 backend-rbu/                   # 🗄️ Database & Documentation
+│   ├── 📁 supabase/                  # SQL Schema & Migrations
+│   ├── 📁 docs/                      # Progress & Master Plan
+│   ├── 📄 PROJECT_STRUCTURE.md       # (This file)
+│   └── 📄 START_HERE.md              # Onboarding guide
 │
-└── 📁 web/                               # 🌐 Next.js Application
-    │
-    ├── 📄 .env.local                     # Environment variables
-    ├── 📄 .gitignore                     # Git ignore rules
-    ├── 📄 components.json                # shadcn/ui config
-    ├── 📄 eslint.config.mjs              # ESLint configuration
-    ├── 📄 next.config.ts                 # Next.js config
-    ├── 📄 next-env.d.ts                  # Next.js TypeScript
-    ├── 📄 package.json                   # Dependencies
-    ├── 📄 postcss.config.mjs             # PostCSS config
-    ├── 📄 tsconfig.json                  # TypeScript config
-    │
-    ├── 📁 src/                           # Source code
+└── 📄 README.md                      # Master Repository Guide
     │   │
     │   ├── 📁 app/                       # 🎯 App Router
     │   │   │
@@ -162,7 +154,7 @@ Response → Update actual score
 
 ```bash
 # Install dependencies
-cd web && npm install
+npm install
 
 # Start dev server
 npm run dev
