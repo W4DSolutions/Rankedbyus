@@ -4,6 +4,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NewsletterSection } from "@/components/NewsletterSection";
 import type { Category } from "@/types/models";
 
 export const metadata: Metadata = {
@@ -47,10 +48,11 @@ export default async function Home() {
     'saas-essentials': '🚀',
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
-      <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
+      <header className="fixed top-0 left-0 right-0 z-40 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
@@ -180,6 +182,8 @@ export default async function Home() {
           </SubmitToolModal>
         </div>
       </section>
+
+      <NewsletterSection />
 
       {/* Footer */}
       <footer className="border-t border-slate-800 bg-slate-950 py-12 text-slate-400">
