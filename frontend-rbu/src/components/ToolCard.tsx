@@ -61,9 +61,11 @@ export function ToolCard({ tool, rank, showCategory }: ToolCardProps) {
                 {/* Content */}
                 <div className="flex-1 text-center md:text-left">
                     <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 mb-2">
-                        <h3 className="text-2xl font-black text-white hover:text-blue-400 transition-colors uppercase tracking-tight" itemProp="name">
-                            {tool.name}
-                        </h3>
+                        <Link href={`/tool/${tool.slug}`}>
+                            <h3 className="text-2xl font-black text-white hover:text-blue-400 transition-colors uppercase tracking-tight" itemProp="name">
+                                {tool.name}
+                            </h3>
+                        </Link>
                         {showCategory && tool.categories && (
                             <Link
                                 href={`/category/${tool.categories.slug}`}

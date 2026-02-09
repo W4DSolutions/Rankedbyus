@@ -17,6 +17,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
     }));
 
+    // Fetch all approved items
+    const { data: items } = await supabase
+        .from('items')
+        .select('slug, created_at')
+        .eq('status', 'approved');
+
+    const itemEntries: MetadataRoute.Sitemap = (items || []).map((item: any) => ({
+        url: `${baseUrl}/tool/${item.slug}`,
+        lastModified: item.created_at || new Date().toISOString(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+    }));
+
     return [
         {
             url: baseUrl,
@@ -25,5 +38,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 1,
         },
         ...categoryEntries,
+        ...itemEntries,
     ];
 }

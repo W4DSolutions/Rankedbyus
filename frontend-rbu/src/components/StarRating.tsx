@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 interface StarRatingProps {
     rating: number;
     maxRating?: number;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'xs' | 'sm' | 'md' | 'lg';
     interactive?: boolean;
     onRatingChange?: (rating: number) => void;
     className?: string;
@@ -23,6 +23,7 @@ export function StarRating({
     const [hoverRating, setHoverRating] = useState<number | null>(null);
 
     const sizes = {
+        xs: 'h-2.5 w-2.5',
         sm: 'h-3 w-3',
         md: 'h-5 w-5',
         lg: 'h-8 w-8'
