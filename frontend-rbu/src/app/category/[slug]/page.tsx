@@ -122,7 +122,10 @@ export default async function CategoryPage({
                             {category.name.includes('Writing') ? '✍️' :
                                 category.name.includes('Image') ? '🎨' :
                                     category.name.includes('Video') ? '🎬' :
-                                        category.name.includes('Code') ? '💻' : '🔧'}
+                                        category.name.includes('Code') ? '💻' :
+                                            category.name.includes('Hosting') ? '☁️' :
+                                                category.name.includes('eSIM') ? '📶' :
+                                                    category.name.includes('SaaS') ? '🚀' : '🔧'}
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-white">{category.name}</h2>

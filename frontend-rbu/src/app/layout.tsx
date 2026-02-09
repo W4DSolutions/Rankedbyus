@@ -12,16 +12,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { siteConfig } from "@/config/site";
+
 export const metadata: Metadata = {
-  title: "RankedByUs - The Internet's Safest Community-Ranked Recommendations",
-  description: "Discover the best AI tools, apps, and services ranked by real users. No spam, no chaos - just trusted recommendations.",
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
   keywords: ["rankings", "best tools", "AI tools", "user reviews", "community recommendations"],
   openGraph: {
-    title: "RankedByUs - Community-Ranked Recommendations",
-    description: "Discover the best AI tools, apps, and services ranked by real users.",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: siteConfig.name,
     type: "website",
   },
 };
+
+import { CookieBanner } from "@/components/CookieBanner";
 
 export default function RootLayout({
   children,
@@ -34,6 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

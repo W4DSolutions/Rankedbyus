@@ -3,6 +3,7 @@ import { SubmitToolModal } from "@/components/SubmitToolModal";
 import { SearchBar } from "@/components/SearchBar";
 import { createClient } from "@/lib/supabase/server";
 import { Metadata } from "next";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Category } from "@/types/models";
 
 export const metadata: Metadata = {
@@ -41,6 +42,9 @@ export default async function Home() {
     'ai-image-generators': '🎨',
     'ai-video-tools': '🎬',
     'ai-code-assistants': '💻',
+    'cloud-hosting': '☁️',
+    'esim-providers': '📶',
+    'saas-essentials': '🚀',
   };
 
   return (
@@ -56,12 +60,10 @@ export default async function Home() {
               <h1 className="text-xl font-bold text-white">RankedByUs</h1>
             </div>
             <nav className="flex items-center gap-6">
-              <a href="#categories" className="text-sm text-slate-300 hover:text-white transition-colors">
+              <a href="#categories" className="text-sm text-slate-300 hover:text-white transition-colors hidden md:block">
                 Categories
               </a>
-              <a href="#how-it-works" className="text-sm text-slate-300 hover:text-white transition-colors">
-                How It Works
-              </a>
+              <ThemeToggle />
               <SubmitToolModal />
             </nav>
           </div>
@@ -188,7 +190,11 @@ export default async function Home() {
             </div>
             <span className="text-lg font-bold text-white">RankedByUs</span>
           </div>
-          <p>© 2026 RankedByUs. Built by the community, for the community.</p>
+          <p className="mb-4">© 2026 RankedByUs. Built by the community, for the community.</p>
+          <div className="flex justify-center gap-6 text-[10px] uppercase tracking-widest font-bold">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </footer>
     </div>
