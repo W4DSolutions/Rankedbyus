@@ -3,17 +3,17 @@ import { createClient } from '@/lib/supabase/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = await createClient();
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rankedbyus.com';
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://rankedbyus.com').replace(/\/$/, '');
 
     // Fetch all approved categories
     const { data: categories } = await supabase
         .from('categories')
-        .select('slug, updated_at');
+        .select('slug, created_at');
 
-    const categoryEntries: MetadataRoute.Sitemap = (categories || []).map((category) => ({
+    const categoryEntries: MetadataRoute.Sitemap = (categories || []).map((category: any) => ({
         url: `${baseUrl}/category/${category.slug}`,
-        lastModified: category.updated_at || new Date().toISOString(),
-        changeFrequency: 'daily',
+        lastModified: category.created_at || new Date().toISOString(),
+        changeFrequency: 'daily' as const,
         priority: 0.8,
     }));
 
@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         {
             url: baseUrl,
             lastModified: new Date().toISOString(),
-            changeFrequency: 'daily',
+            changeFrequency: 'daily' as const,
             priority: 1,
         },
         ...categoryEntries,
