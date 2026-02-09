@@ -2,7 +2,18 @@ import Link from "next/link";
 import { SubmitToolModal } from "@/components/SubmitToolModal";
 import { SearchBar } from "@/components/SearchBar";
 import { createClient } from "@/lib/supabase/server";
+import { Metadata } from "next";
 import type { Category } from "@/types/models";
+
+export const metadata: Metadata = {
+  title: "RankedByUs - Community-Ranked AI Tools & Recommendations",
+  description: "Discover the best AI tools, writing assistants, image generators, and more. Ranked by real users, verified for 2026. Join the community and vote for your favorites.",
+  openGraph: {
+    title: "RankedByUs | Trusted Tool Rankings",
+    description: "The internet's safest community-ranked recommendations for AI tools and services.",
+    type: "website",
+  },
+};
 
 export default async function Home() {
   const supabase = await createClient();
