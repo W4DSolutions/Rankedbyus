@@ -1,6 +1,16 @@
 import Link from "next/link";
+import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ToolCard } from "@/components/ToolCard";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
+    const { q: query } = await searchParams;
+    return {
+        title: query ? `Search results for "${query}" - RankedByUs` : 'Search - RankedByUs',
+        description: `Browse the best community-ranked tools matching your search for "${query}".`,
+        robots: { index: false, follow: true }, // Don't index search results, but follow links
+    };
+}
 
 export default async function SearchResultsPage({
     searchParams
