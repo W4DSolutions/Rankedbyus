@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { AdminActionButtons } from "@/components/AdminActionButtons";
+import { AdminLogoutButton } from "@/components/AdminLogoutButton";
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-    const supabase = await createClient();
+    // We use the admin client (Service Role) here to bypass RLS
+    // and see pending/rejected items.
+    const supabase = createAdminClient();
 
     // Fetch pending submissions
     const { data: pendingItems } = await supabase
@@ -16,7 +22,7 @@ export default async function AdminPage() {
 
     const pendingSubmissions = pendingItems || [];
 
-    // Fetch stats
+    // Fetch stats using admin client to get accurate counts
     const { count: totalApproved } = await supabase
         .from('items')
         .select('*', { count: 'exact', head: true })
@@ -43,7 +49,7 @@ export default async function AdminPage() {
                             <h1 className="text-xl font-bold text-white">RankedByUs Admin</h1>
                         </Link>
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-slate-400">Admin Panel</span>
+                            <AdminLogoutButton />
                             <Link
                                 href="/"
                                 className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
@@ -127,20 +133,7 @@ export default async function AdminPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-2 ml-6">
-                                        <button
-                                            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
-                                            onClick={() => alert('Approve functionality coming soon!')}
-                                        >
-                                            Approve
-                                        </button>
-                                        <button
-                                            className="rounded-lg border border-red-600 bg-red-600/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-600/20 transition-colors"
-                                            onClick={() => alert('Reject functionality coming soon!')}
-                                        >
-                                            Reject
-                                        </button>
-                                    </div>
+                                    <AdminActionButtons id={submission.id} />
                                 </div>
                             </div>
                         ))}

@@ -1,13 +1,48 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { VoteButtons } from "@/components/VoteButtons";
+import { Metadata } from "next";
 import { SubmitToolModal } from "@/components/SubmitToolModal";
+import { SortSelector, SortOption } from "@/components/SortSelector";
+import { ToolCard } from "@/components/ToolCard";
+import { SponsoredBanner } from "@/components/SponsoredBanner";
 import { createClient } from "@/lib/supabase/server";
-import type { Item, Category } from "@/types/models";
+import { cn } from "@/lib/utils";
+import type { Category } from "@/types/models";
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const supabase = await createClient();
     const { slug } = await params;
+
+    const { data: categoryData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+    if (!categoryData) return { title: 'Category Not Found' };
+    const category = categoryData as Category;
+
+    return {
+        title: `Best ${category.name} in 2026 - RankedByUs`,
+        description: category.description || `Explore the community-ranked best ${category.name.toLowerCase()} for 2026. Real user reviews and voting.`,
+        openGraph: {
+            title: `Top 10+ ${category.name} | RankedByUs`,
+            description: category.description || undefined,
+            type: 'website',
+        },
+    };
+}
+
+export default async function CategoryPage({
+    params,
+    searchParams
+}: {
+    params: Promise<{ slug: string }>,
+    searchParams: Promise<{ sort?: SortOption, tag?: string }>
+}) {
+    const supabase = await createClient();
+    const { slug } = await params;
+    const { sort = 'top', tag } = await searchParams;
 
     // Fetch category
     const { data: categoryData, error: categoryError } = await supabase
@@ -22,15 +57,40 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
     const category = categoryData as Category;
 
-    // Fetch approved items for this category, ordered by score
-    const { data: items } = await supabase
+    // Build query based on sort option and tags
+    let query = supabase
         .from('items')
-        .select('*')
+        .select(`
+            *,
+            item_tags!inner (
+                tags (*)
+            )
+        `)
         .eq('category_id', category.id)
-        .eq('status', 'approved')
-        .order('score', { ascending: false });
+        .eq('status', 'approved');
 
-    const tools = (items || []) as Item[];
+    if (tag) {
+        query = query.eq('item_tags.tags.slug', tag);
+    }
+
+    if (sort === 'new') {
+        query = query.order('created_at', { ascending: false });
+    } else if (sort === 'most-voted') {
+        query = query.order('vote_count', { ascending: false });
+    } else {
+        query = query.order('score', { ascending: false });
+    }
+
+    const { data: items } = await query;
+    const tools = (items || []) as any[];
+
+    // Fetch all available tags to show in filter bar
+    const { data: allTagsData } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name');
+
+    const allTags = (allTagsData || []) as any[];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -70,7 +130,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                         </div>
                     </div>
                     <div className="mt-6 flex items-center gap-6 text-sm text-slate-400">
-                        <span>{tools.length} tools ranked</span>
+                        <span>{tools.length} {tag ? `"${tag}"` : ''} tools ranked</span>
                         <span>•</span>
                         <span>Updated daily</span>
                     </div>
@@ -80,79 +140,58 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             {/* Rankings List */}
             <section className="py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+                    {/* Filter & Sort Bar */}
+                    <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
+                        <div className="flex items-center gap-2 min-w-max">
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">Filter by:</span>
+                            <Link
+                                href={`/category/${slug}${sort ? `?sort=${sort}` : ''}`}
+                                className={cn(
+                                    "px-4 py-1.5 rounded-full text-xs font-medium transition-all border",
+                                    !tag ? "bg-slate-700 border-slate-600 text-white shadow-lg" : "border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                                )}
+                            >
+                                All Tools
+                            </Link>
+                            {allTags?.map((ctag) => (
+                                <Link
+                                    key={ctag.id}
+                                    href={`/category/${slug}?tag=${ctag.slug}${sort ? `&sort=${sort}` : ''}`}
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap",
+                                        tag === ctag.slug ? "bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/20" : "border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                                    )}
+                                >
+                                    {ctag.name}
+                                </Link>
+                            ))}
+                        </div>
+                        <SortSelector />
+                    </div>
+
+                    <SponsoredBanner />
+
                     {tools.length === 0 ? (
-                        <div className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-12 text-center">
-                            <div className="text-5xl mb-4">📭</div>
-                            <h3 className="text-xl font-semibold text-white">No tools yet</h3>
-                            <p className="mt-2 text-slate-400">Be the first to submit a tool in this category!</p>
+                        <div className="rounded-2xl border border-slate-700/30 bg-slate-800/20 p-20 text-center backdrop-blur-sm">
+                            <div className="text-6xl mb-6 opacity-20">
+                                {tag ? '🔍' : '📭'}
+                            </div>
+                            <h3 className="text-2xl font-bold text-white">
+                                {tag ? `No tools tagged "${tag}"` : 'This category is empty'}
+                            </h3>
+                            <p className="mt-3 text-slate-400 max-w-sm mx-auto">
+                                {tag ? 'We couldn\'t find any tools with this specific tag. Try another one!' : 'Be the pioneer! Submit the first tool for this category using the button above.'}
+                            </p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             {tools.map((tool, index) => (
-                                <div
+                                <ToolCard
                                     key={tool.id}
-                                    className="group relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/50 p-6 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-slate-800"
-                                >
-                                    <div className="flex items-start gap-6">
-                                        {/* Rank */}
-                                        <div className="flex flex-col items-center">
-                                            <div className={`text-2xl font-bold ${index === 0 ? 'text-yellow-400' :
-                                                index === 1 ? 'text-slate-300' :
-                                                    index === 2 ? 'text-amber-600' :
-                                                        'text-slate-500'
-                                                }`}>
-                                                #{index + 1}
-                                            </div>
-                                            <div className="mt-2">
-                                                <VoteButtons
-                                                    itemId={tool.id}
-                                                    initialScore={tool.score}
-                                                    initialVoteCount={tool.vote_count}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Logo */}
-                                        <div className="flex-shrink-0">
-                                            <img
-                                                src={tool.logo_url || 'https://placehold.co/80x80/334155/white?text=?'}
-                                                alt={tool.name}
-                                                className="h-20 w-20 rounded-lg"
-                                            />
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1">
-                                            <h3 className="text-xl font-semibold text-white">{tool.name}</h3>
-                                            <p className="mt-1 text-sm text-slate-400">{tool.description}</p>
-                                            <div className="mt-3 text-xs text-slate-500">
-                                                {tool.vote_count} votes
-                                            </div>
-                                        </div>
-
-                                        {/* CTA */}
-                                        <div className="flex flex-col gap-2">
-                                            <a
-                                                href={tool.affiliate_link || tool.website_url || '#'}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                                            >
-                                                Visit Website
-                                            </a>
-                                            {tool.website_url && tool.website_url !== tool.affiliate_link && (
-                                                <a
-                                                    href={tool.website_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-center text-xs text-slate-400 hover:text-slate-300 transition-colors"
-                                                >
-                                                    Learn More →
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                    tool={tool}
+                                    rank={index + 1}
+                                />
                             ))}
                         </div>
                     )}

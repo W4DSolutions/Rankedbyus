@@ -1,4 +1,5 @@
 // Shared types for the application
+export type ItemStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Category {
     id: string;
@@ -18,10 +19,22 @@ export interface Item {
     affiliate_link: string | null;
     logo_url: string | null;
     website_url: string | null;
-    status: 'pending' | 'approved' | 'rejected';
+    status: ItemStatus;
     featured: boolean;
     vote_count: number;
     score: number;
+    average_rating: number;
+    review_count: number;
+    created_at: string;
+}
+
+export interface Review {
+    id: string;
+    item_id: string;
+    session_id: string;
+    rating: number;
+    comment: string | null;
+    status: ItemStatus;
     created_at: string;
 }
 
@@ -33,6 +46,23 @@ export interface Vote {
     created_at: string;
 }
 
-export interface ItemWithCategory extends Item {
-    categories: Category;
+export interface Tag {
+    id: string;
+    name: string;
+    slug: string;
+    color: string | null;
+    created_at: string;
+}
+
+export interface ItemTag {
+    id: string;
+    item_id: string;
+    tag_id: string;
+    created_at: string;
+    tags?: Tag;
+}
+
+export interface ItemWithDetails extends Item {
+    categories?: Category;
+    item_tags?: (ItemTag & { tags: Tag })[];
 }

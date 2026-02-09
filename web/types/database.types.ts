@@ -22,6 +22,18 @@ export interface Item {
   featured: boolean;
   vote_count: number;
   score: number;
+  average_rating: number;
+  review_count: number;
+  created_at: string;
+}
+
+export interface Review {
+  id: string;
+  item_id: string;
+  session_id: string;
+  rating: number;
+  comment: string | null;
+  status: ItemStatus;
   created_at: string;
 }
 
@@ -30,6 +42,21 @@ export interface Vote {
   item_id: string;
   session_id: string;
   value: number;
+  created_at: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  color: string | null;
+  created_at: string;
+}
+
+export interface ItemTag {
+  id: string;
+  item_id: string;
+  tag_id: string;
   created_at: string;
 }
 
@@ -43,11 +70,13 @@ export type Database = {
       };
       items: {
         Row: Item;
-        Insert: Omit<Item, 'id' | 'created_at' | 'vote_count' | 'score' | 'featured' | 'status'> & {
+        Insert: Omit<Item, 'id' | 'created_at' | 'vote_count' | 'score' | 'featured' | 'status' | 'average_rating' | 'review_count'> & {
           status?: ItemStatus;
           featured?: boolean;
           vote_count?: number;
           score?: number;
+          average_rating?: number;
+          review_count?: number;
         };
         Update: Partial<Item>;
       };
@@ -55,6 +84,21 @@ export type Database = {
         Row: Vote;
         Insert: Omit<Vote, 'id' | 'created_at'>;
         Update: Partial<Vote>;
+      };
+      tags: {
+        Row: Tag;
+        Insert: Omit<Tag, 'id' | 'created_at'>;
+        Update: Partial<Tag>;
+      };
+      item_tags: {
+        Row: ItemTag;
+        Insert: Omit<ItemTag, 'id' | 'created_at'>;
+        Update: Partial<ItemTag>;
+      };
+      reviews: {
+        Row: Review;
+        Insert: Omit<Review, 'id' | 'created_at' | 'status'> & { status?: ItemStatus };
+        Update: Partial<Review>;
       };
     };
   };

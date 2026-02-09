@@ -53,3 +53,74 @@ create policy "Public categories are viewable by everyone" on public.categories 
 create policy "Public and approved items are viewable by everyone" on public.items for select using (status = 'approved'); 
 create policy "Public can submit items" on public.items for insert with check (true);
 create policy "Anyone can vote" on public.votes for insert with check (true);
+
+-- Tags Table
+create table public.tags (
+  id uuid not null default gen_random_uuid() primary key,
+  name text not null unique,
+  slug text not null unique,
+  color text, -- Optional: CSS color or class
+  created_at timestamptz not null default now()
+);
+
+-- Item-Tag Junction Table
+create table public.item_tags (
+  id uuid not null default gen_random_uuid() primary key,
+  item_id uuid not null references public.items(id) on delete cascade,
+  tag_id uuid not null references public.tags(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique(item_id, tag_id)
+);
+
+-- RLS for Tags
+alter table public.tags enable row level security;
+alter table public.item_tags enable row level security;
+
+create policy \
+Public
+tags
+are
+viewable
+by
+everyone\ on public.tags for select using (true);
+create policy \Public
+item_tags
+are
+viewable
+by
+everyone\ on public.item_tags for select using (true);
+
+
+-- Reviews Table
+create table public.reviews (
+  id uuid not null default gen_random_uuid() primary key,
+  item_id uuid not null references public.items(id) on delete cascade,
+  session_id text not null,
+  rating int not null check (rating >= 1 and rating <= 5),
+  comment text, -- Optional text review
+  status item_status not null default 'pending', -- Reviews might need moderation too
+  created_at timestamptz not null default now(),
+  unique(item_id, session_id) -- One review per tool per person
+);
+
+-- RLS for Reviews
+alter table public.reviews enable row level security;
+create policy \
+Public
+reviews
+are
+viewable
+by
+everyone\ on public.reviews for select using (status = 'approved');
+create policy \Anyone
+can
+submit
+a
+review\ on public.reviews for insert with check (true);
+
+
+-- Adding rating stats to items
+alter table public.items 
+add column average_rating float not null default 0,
+add column review_count int not null default 0;
+
