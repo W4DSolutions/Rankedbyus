@@ -9,7 +9,14 @@ This repository is organized into two main sections to simplify development and 
 
 ## 🚀 Deployment
 
-The platform is optimized for **Vercel**. 
+The frontend is optimized for [Vercel](https://vercel.com).
+The backend is powered by [Supabase](https://supabase.com).
+
+## 🛡️ Admin Dashboard
+You can manage tools and reviews at `/admin`.
+1. Configure `ADMIN_PASSWORD` in your environment variables.
+2. Login at `/admin/login`.
+3. Approve/Reject new submissions in real-time.
 
 ### Vercel Instructions:
 1. Link this repository to your Vercel project.
