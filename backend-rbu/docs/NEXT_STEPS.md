@@ -12,7 +12,7 @@ We've successfully built the **frontend foundation** with a modern, premium desi
 2. Create a new project
 3. Wait for project initialization (~2 minutes)
 4. Navigate to **SQL Editor**
-5. Paste the contents of `web/supabase/schema.sql`
+5. Paste the contents of `backend-rbu/supabase/schema.sql`
 6. Click "Run" to create tables
 
 ### Step 2: Get Credentials

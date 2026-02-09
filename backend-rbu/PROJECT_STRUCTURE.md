@@ -7,9 +7,12 @@ RankedByUs/
 │
 ├── 📁 frontend-rbu/                  # 🌐 Next.js Application (Vercel Root)
 │   ├── 📁 src/                       # App Router & Logic
+│   │   ├── 📁 app/                   # Next.js App Router
+│   │   ├── 📁 components/            # React Components
+│   │   ├── 📁 lib/                   # Utilities & Clients
+│   │   └── 📁 types/                  # Internal Shared Types
 │   ├── 📁 public/                    # Static Assets
-│   ├── 📁 lib/                       # Utilities & Clients
-│   ├── 📁 types/                      # TypeScript Definitions
+│   ├── 📁 types/                     # Database Schema Types
 │   ├── 📄 package.json               # Dependencies
 │   └── ...                           # Config files
 │
@@ -20,51 +23,6 @@ RankedByUs/
 │   └── 📄 START_HERE.md              # Onboarding guide
 │
 └── 📄 README.md                      # Master Repository Guide
-    │   │
-    │   ├── 📁 app/                       # 🎯 App Router
-    │   │   │
-    │   │   ├── 📁 api/                   # API Routes
-    │   │   │   └── 📁 vote/
-    │   │   │       └── route.ts          # POST /api/vote
-    │   │   │
-    │   │   ├── 📁 admin/                 # Admin Panel
-    │   │   │   └── page.tsx              # /admin
-    │   │   │
-    │   │   ├── 📁 category/              # Category Routes
-    │   │   │   └── 📁 [slug]/
-    │   │   │       └── page.tsx          # /category/[slug]
-    │   │   │
-    │   │   ├── favicon.ico               # Site favicon
-    │   │   ├── globals.css               # 🎨 Global styles + theme
-    │   │   ├── layout.tsx                # Root layout
-    │   │   ├── not-found.tsx             # 404 page
-    │   │   └── page.tsx                  # 🏠 Homepage
-    │   │
-    │   ├── 📁 components/                # ⚛️ React Components
-    │   │   ├── SkeletonLoader.tsx        # Loading states
-    │   │   ├── SubmitToolModal.tsx       # Tool submission modal
-    │   │   ├── Toast.tsx                 # Notification system
-    │   │   └── VoteButtons.tsx           # Interactive voting
-    │   │
-    │   └── 📁 lib/                       # 🔧 Utilities
-    │       ├── formatters.ts             # Number/date formatting
-    │       ├── session.ts                # Session management
-    │       ├── utils.ts                  # cn() utility
-    │       └── 📁 supabase/
-    │           ├── client.ts             # Client-side Supabase
-    │           └── server.ts             # Server-side Supabase
-    │
-    ├── 📁 types/                         # 📘 TypeScript Types
-    │   └── database.types.ts             # Database schema types
-    │
-    ├── 📁 supabase/                      # 🗄️ Database
-    │   └── schema.sql                    # PostgreSQL schema
-    │
-    ├── 📁 public/                        # Static assets
-    │   ├── next.svg
-    │   └── vercel.svg
-    │
-    └── 📁 node_modules/                  # Dependencies (gitignored)
 ```
 
 ---
@@ -74,85 +32,46 @@ RankedByUs/
 | Category | Count |
 |----------|-------|
 | **Pages** | 4 (Home, Category, Admin, 404) |
-| **Components** | 4 (Vote, Modal, Toast, Skeleton) |
-| **API Routes** | 1 (Vote endpoint) |
-| **Utilities** | 5 (Supabase, formatters, session, utils) |
+| **Components** | 8+ (Vote, Modal, Toast, Skeleton, ToolCard, SearchBar, etc.) |
+| **API Routes** | 8+ (Vote, Review, Search, Submit, etc.) |
+| **Utilities** | 6+ (Supabase, formatters, session, utils) |
 | **Config Files** | 9 |
 | **Documentation** | 7 |
-| **Total Files** | ~30+ |
+| **Total Files** | ~50+ |
 
 ---
 
 ## 🎨 Key Files Explained
 
 ### Core Pages
-- **`page.tsx`** - Landing page with hero, categories, stats
-- **`category/[slug]/page.tsx`** - Dynamic ranking pages
-- **`admin/page.tsx`** - Moderation dashboard
-- **`not-found.tsx`** - Custom 404 page
+- **`frontend-rbu/src/app/page.tsx`** - Landing page with hero, categories, stats
+- **`frontend-rbu/src/app/category/[slug]/page.tsx`** - Dynamic ranking pages
+- **`frontend-rbu/src/app/admin/page.tsx`** - Moderation dashboard
+- **`frontend-rbu/src/app/search/page.tsx`** - Search results
 
 ### Components
 - **`VoteButtons.tsx`** - Upvote/downvote with optimistic UI
-- **`SubmitToolModal.tsx`** - Tool submission form
-- **`Toast.tsx`** - Success/error notifications
-- **`SkeletonLoader.tsx`** - Loading placeholders
+- **`ToolCard.tsx`** - Premium tool display with SEO markup
+- **`StarRating.tsx`** - Interactive rating component
+- **`ReviewModal.tsx`** - Community review submission form
 
 ### Utilities
 - **`lib/supabase/client.ts`** - Browser Supabase client
 - **`lib/supabase/server.ts`** - Server-side Supabase client
-- **`lib/formatters.ts`** - Format numbers, dates, text
 - **`lib/session.ts`** - Anonymous session tracking
-- **`lib/utils.ts`** - Tailwind class merging
-
-### Configuration
-- **`globals.css`** - Custom Tailwind theme (Slate + gradients)
-- **`tsconfig.json`** - TypeScript strict mode
-- **`next.config.ts`** - Next.js settings
-- **`.env.local`** - Environment variables
 
 ### Database
-- **`supabase/schema.sql`** - Tables: categories, items, votes
-- **`types/database.types.ts`** - TypeScript interfaces
-
----
-
-## 🔄 Data Flow
-
-```
-User Action (Click Vote)
-         ↓
-VoteButtons Component
-         ↓
-getOrCreateSessionId() → localStorage
-         ↓
-POST /api/vote (with session ID)
-         ↓
-Optimistic UI Update (instant feedback)
-         ↓
-[Future: Supabase Database]
-         ↓
-Response → Update actual score
-```
-
----
-
-## 🎯 Entry Points
-
-### User-Facing
-- **`/`** - Homepage
-- **`/category/ai-writing-tools`** - Rankings
-- **`/admin`** - Admin panel
-
-### Developer-Facing
-- **`package.json`** - Dependencies & scripts
-- **`README.md`** - Setup instructions
-- **`docs/`** - All documentation
+- **`backend-rbu/supabase/schema.sql`** - Tables: categories, items, votes, reviews, tags
+- **`frontend-rbu/types/database.types.ts`** - TypeScript interfaces
 
 ---
 
 ## 🚀 Quick Commands
 
 ```bash
+# Navigate to frontend
+cd frontend-rbu
+
 # Install dependencies
 npm install
 
@@ -161,99 +80,16 @@ npm run dev
 
 # Build for production
 npm run build
-
-# Run production build
-npm run start
-
-# Lint code
-npm run lint
 ```
 
 ---
 
-## 📦 Dependencies
+## 📦 Key Dependencies
 
-### Production
 - `next` - React framework
-- `react` - UI library
-- `react-dom` - DOM bindings
-- `@supabase/ssr` - Supabase for Next.js
-- `@supabase/supabase-js` - Supabase client
-- `clsx` - Conditional classNames
-- `tailwind-merge` - Merge Tailwind classes
-- `lucide-react` - Icons
-
-### Development
-- `typescript` - Type checking
+- `@supabase/supabase-js` - Database client
 - `tailwindcss` - Styling
-- `@tailwindcss/postcss` - Tailwind v4
-- `eslint` - Code linting
-- `eslint-config-next` - Next.js ESLint
-- `@types/*` - TypeScript definitions
-
----
-
-## 🎨 Theme Structure
-
-Located in `globals.css`:
-
-```css
-:root {
-  --background: hsl(...)
-  --foreground: hsl(...)
-  --primary: hsl(...)
-  --secondary: hsl(...)
-  /* + 15 more color tokens */
-}
-
-@media (prefers-color-scheme: dark) {
-  /* Dark mode overrides */
-}
-```
-
----
-
-## ✅ Code Quality
-
-- ✅ **TypeScript** - 100% typed
-- ✅ **ESLint** - Configured
-- ✅ **Prettier-ready** - Clean formatting
-- ✅ **Git-ready** - .gitignore configured
-
----
-
-## 🔒 Security
-
-- Session-based voting (no auth required)
-- Input validation on forms
-- XSS protection (React auto-escapes)
-- CORS configured in API routes
-- Environment variables for secrets
-
----
-
-## 📈 Performance
-
-- Static-first rendering (SSG)
-- Incremental Static Regeneration (ISR)
-- Optimized images (Next/Image)
-- Code splitting (automatic)
-- CSS purging (Tailwind)
-
----
-
-## 🎯 Next Steps
-
-1. **Set up Supabase** (10 min)
-2. **Run `schema.sql`** (5 min)
-3. **Update `.env.local`** (2 min)
-4. **Update API routes** (60 min)
-5. **Test end-to-end** (30 min)
-6. **Deploy to Vercel** (15 min)
-
-**Total time to launch:** ~2 hours
-
-See `docs/NEXT_STEPS.md` for detailed instructions.
+- `lucide-react` - Icons
 
 ---
 
