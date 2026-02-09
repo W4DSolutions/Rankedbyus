@@ -21,13 +21,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         .single();
 
     if (!item) return { title: 'Tool Not Found' };
+    const tool = item as { name: string; description: string | null };
 
     return {
-        title: `${item.name} Reviews & Rankings (2026) - RankedByUs`,
-        description: item.description || `Read community reviews and see where ${item.name} ranks in the 2026 AI tool leaderboards.`,
+        title: `${tool.name} Reviews & Rankings (2026) - RankedByUs`,
+        description: tool.description || `Read community reviews and see where ${tool.name} ranks in the 2026 AI tool leaderboards.`,
         openGraph: {
-            title: `${item.name} | RankedByUs`,
-            description: item.description || undefined,
+            title: `${tool.name} | RankedByUs`,
+            description: tool.description || undefined,
             type: 'website',
         },
     };
@@ -100,9 +101,13 @@ export default async function ToolDetailPage({
                             <Link href="/#categories" className="text-sm text-slate-300 hover:text-white transition-colors">
                                 Categories
                             </Link>
-                            {tool.categories && (
+                            {tool.categories ? (
                                 <Link href={`/category/${tool.categories.slug}`} className="text-sm text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest text-[10px]">
                                     Back to {tool.categories.name}
+                                </Link>
+                            ) : (
+                                <Link href="/#categories" className="text-sm text-slate-500 hover:text-slate-300 font-bold uppercase tracking-widest text-[10px]">
+                                    Browse Categories
                                 </Link>
                             )}
                         </nav>
@@ -181,7 +186,7 @@ export default async function ToolDetailPage({
                                         No reviews yet. Be the first to share your thoughts!
                                     </div>
                                 ) : (
-                                    reviews?.map((review) => (
+                                    (reviews as any[])?.map((review) => (
                                         <div key={review.id} className="rounded-2xl border border-slate-700/30 bg-slate-800/20 p-6 backdrop-blur-sm">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex items-center gap-4">
@@ -243,7 +248,7 @@ export default async function ToolDetailPage({
                         <div>
                             <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Related Rankings</h4>
                             <div className="space-y-4">
-                                {relatedTools?.map((related) => (
+                                {(relatedTools as any[])?.map((related) => (
                                     <Link
                                         key={related.id}
                                         href={`/tool/${related.slug}`}

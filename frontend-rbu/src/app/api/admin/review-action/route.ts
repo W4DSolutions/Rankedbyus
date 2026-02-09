@@ -36,9 +36,9 @@ export async function POST(request: NextRequest) {
                 .eq('item_id', itemId)
                 .eq('status', 'approved');
 
-            if (reviews) {
+            if (reviews && reviews.length > 0) {
                 const count = reviews.length;
-                const avg = reviews.reduce((acc, r) => acc + r.rating, 0) / count;
+                const avg = (reviews as any[]).reduce((acc, r) => acc + r.rating, 0) / count;
 
                 await (supabase
                     .from('items') as any)
