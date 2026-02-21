@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { ItemStatus } from '@/types/models';
 
 export async function POST(request: NextRequest) {
     try {
-        const { id, action } = await request.json();
+        const body = await request.json();
+        const { id, action } = body as { id: string; action: string };
 
         if (!id || !['approve', 'reject'].includes(action)) {
             return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
         }
 
         const supabase = createAdminClient();
-        const status = action === 'approve' ? 'approved' : 'rejected';
+        const status = (action === 'approve' ? 'approved' : 'rejected') as ItemStatus;
 
         // 1. Update review status
-        const { data: review, error: reviewError } = await (supabase
-            .from('reviews') as any)
+        const { data: review, error: reviewError } = await supabase
+            .from('reviews')
             .update({ status })
             .eq('id', id)
             .select('item_id')
@@ -25,30 +27,33 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: reviewError.message }, { status: 500 });
         }
 
-        if (action === 'approve') {
-            // 2. Recalculate item rating if approved
-            const itemId = (review as any).item_id;
+        // 2. Recalculate item rating regardless of action (in case we rejected a previously approved review)
+        const itemId = review.item_id;
 
-            // Get all approved reviews for this item
-            const { data: reviews } = await supabase
-                .from('reviews')
-                .select('rating')
-                .eq('item_id', itemId)
-                .eq('status', 'approved');
+        // Get all approved reviews for this item
+        const { data: reviews } = await supabase
+            .from('reviews')
+            .select('rating')
+            .eq('item_id', itemId)
+            .eq('status', 'approved');
 
-            if (reviews && reviews.length > 0) {
-                const count = reviews.length;
-                const avg = (reviews as any[]).reduce((acc, r) => acc + r.rating, 0) / count;
+        let newAvg = 0;
+        let newCount = 0;
 
-                await (supabase
-                    .from('items') as any)
-                    .update({
-                        average_rating: avg,
-                        review_count: count
-                    })
-                    .eq('id', itemId);
-            }
+        if (reviews && reviews.length > 0) {
+            newCount = reviews.length;
+            const totalRating = reviews.reduce((acc: number, r: { rating: number }) => acc + r.rating, 0);
+            newAvg = totalRating / newCount;
         }
+
+        // Update item stats
+        await supabase
+            .from('items')
+            .update({
+                average_rating: newAvg,
+                review_count: newCount
+            })
+            .eq('id', itemId);
 
         return NextResponse.json({ success: true, status });
     } catch (error) {

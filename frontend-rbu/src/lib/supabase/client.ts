@@ -1,20 +1,17 @@
 
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import { Database } from '../../../types/database.types'
 
-// Use a singleton pattern to prevent multiple instances
-let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null
-
 export const getSupabaseClient = () => {
-    if (supabaseInstance) return supabaseInstance
+    return createBrowserClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+}
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Missing Supabase environment variables')
-    }
-
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey)
-    return supabaseInstance
+export function createClient() {
+    return createBrowserClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 }

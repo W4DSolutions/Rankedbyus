@@ -1,26 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { getOrCreateSessionId } from '@/lib/session';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { formatScore } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 interface VoteButtonsProps {
     itemId: string;
     initialScore: number;
-    initialVoteCount: number;
 }
 
-export function VoteButtons({ itemId, initialScore, initialVoteCount }: VoteButtonsProps) {
+export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
     const [score, setScore] = useState(initialScore);
-    const [voteCount, setVoteCount] = useState(initialVoteCount);
     const [userVote, setUserVote] = useState<1 | -1 | null>(null);
     const [isVoting, setIsVoting] = useState(false);
 
     const handleVote = async (value: 1 | -1) => {
         if (isVoting) return;
 
-        // Get session ID
-        const sessionId = getOrCreateSessionId();
+        const supabase = getSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+            window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+            return;
+        }
 
         // Optimistic update
         const wasVoted = userVote === value;
@@ -36,7 +41,6 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount }: VoteButt
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Session-Id': sessionId,
                 },
                 body: JSON.stringify({
                     item_id: itemId,
@@ -65,27 +69,27 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount }: VoteButt
     };
 
     return (
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1 group/vote">
             <button
                 onClick={() => handleVote(1)}
                 disabled={isVoting}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${userVote === 1
-                    ? 'bg-green-500 text-white'
-                    : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                    } disabled:opacity-50`}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${userVote === 1
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-blue-500 hover:text-white'
+                    } disabled:opacity-50 active:scale-95`}
             >
-                ▲
+                <ChevronUp className={cn("transition-transform", userVote === 1 && "scale-110")} />
             </button>
-            <div className="text-sm font-semibold text-white">{score}</div>
+            <div className="text-sm font-black text-slate-900 dark:text-white my-1">{formatScore(score)}</div>
             <button
                 onClick={() => handleVote(-1)}
                 disabled={isVoting}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${userVote === -1
-                    ? 'bg-red-500 text-white'
-                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                    } disabled:opacity-50`}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${userVote === -1
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-red-500 hover:text-white'
+                    } disabled:opacity-50 active:scale-95`}
             >
-                ▼
+                <ChevronDown className={cn("transition-transform", userVote === -1 && "scale-110")} />
             </button>
         </div>
     );

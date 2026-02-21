@@ -6,7 +6,7 @@ export interface Category {
     slug: string;
     name: string;
     description: string | null;
-    seo_meta: any;
+    seo_meta: Record<string, unknown> | null;
     created_at: string;
 }
 
@@ -25,6 +25,14 @@ export interface Item {
     score: number;
     average_rating: number;
     review_count: number;
+    click_count: number;
+    pricing_model: string | null;
+    is_sponsored?: boolean;
+    sponsored_until?: string;
+    is_verified?: boolean;
+    payment_status?: 'unpaid' | 'paid' | 'refunded' | 'failed';
+    transaction_id?: string;
+    payment_amount?: number;
     created_at: string;
 }
 
@@ -35,7 +43,12 @@ export interface Review {
     rating: number;
     comment: string | null;
     status: ItemStatus;
+    helpful_count?: number;
     created_at: string;
+}
+
+export interface ReviewWithItem extends Review {
+    items: Item;
 }
 
 export interface Vote {
@@ -62,7 +75,27 @@ export interface ItemTag {
     tags?: Tag;
 }
 
+export interface Article {
+    id: string;
+    item_id: string | null;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    content: string;
+    author_name: string | null;
+    author_image: string | null;
+    featured_image: string | null;
+    is_published: boolean;
+    view_count: number;
+    created_at: string;
+    updated_at: string;
+    published_at: string | null;
+}
+
 export interface ItemWithDetails extends Item {
     categories?: Category;
     item_tags?: (ItemTag & { tags: Tag })[];
+    articles?: Article[];
 }
+
+

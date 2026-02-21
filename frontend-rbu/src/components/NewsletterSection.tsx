@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import { Send, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export function NewsletterSection() {
     const [email, setEmail] = useState('');
@@ -28,7 +30,7 @@ export function NewsletterSection() {
                 setStatus('error');
                 setMessage(data.error || 'Something went wrong. Try again?');
             }
-        } catch (err) {
+        } catch {
             setStatus('error');
             setMessage('Network error. Please try again.');
         }
@@ -38,6 +40,8 @@ export function NewsletterSection() {
         <section className="relative py-24 overflow-hidden">
             {/* Background elements that adapt to theme */}
             <div className="absolute inset-0 bg-blue-600/5 dark:bg-blue-600/10 pointer-events-none" />
+            <div className="absolute top-0 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 translate-y-1/2 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
 
             <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -45,18 +49,15 @@ export function NewsletterSection() {
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 text-xs font-bold text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-6">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                                </span>
+                                <Sparkles size={14} className="animate-pulse" />
                                 Weekly Rank Alpha
                             </div>
                             <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-6 leading-tight">
                                 Built for the <br />
                                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent italic">Tool-Obsessed</span>
                             </h2>
-                            <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
-                                Join 12,000+ builders getting the "Deep Rank" newsletter. No fluff, just the AI tools that actually moved the needle this week.
+                            <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-md font-medium">
+                                Join 12,000+ builders getting the &quot;Deep Rank&quot; newsletter. No fluff, just the AI tools that actually moved the needle this week.
                             </p>
                         </div>
 
@@ -68,19 +69,25 @@ export function NewsletterSection() {
                                     placeholder="your@email.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4 text-slate-900 dark:text-white shadow-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400"
+                                    className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-6 py-4 text-slate-900 dark:text-white shadow-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all placeholder:text-slate-400 font-medium"
                                 />
                                 <button
                                     type="submit"
                                     disabled={status === 'loading'}
-                                    className="rounded-2xl bg-slate-900 dark:bg-blue-600 px-8 py-4 text-sm font-black text-white hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 active:scale-95 whitespace-nowrap"
+                                    className="rounded-2xl bg-slate-900 dark:bg-blue-600 px-8 py-4 text-sm font-black text-white hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 disabled:opacity-50 active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 uppercase tracking-widest"
                                 >
-                                    {status === 'loading' ? 'Encrypting...' : 'Sub Now'}
+                                    {status === 'loading' ? 'Encrypting...' : (
+                                        <>
+                                            Sub Now
+                                            <Send size={16} />
+                                        </>
+                                    )}
                                 </button>
                             </form>
 
                             {message && (
-                                <div className={`mt-4 text-sm font-bold animate-in fade-in slide-in-from-top-1 ${status === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                                <div className={`mt-4 text-sm font-bold animate-in fade-in slide-in-from-top-1 flex items-center gap-2 ${status === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                                    {status === 'success' && <CheckCircle2 size={16} />}
                                     {message}
                                 </div>
                             )}
@@ -88,8 +95,14 @@ export function NewsletterSection() {
                             <div className="mt-8 flex items-center gap-6">
                                 <div className="flex -space-x-3">
                                     {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className="h-10 w-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
-                                            <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" className="h-full w-full object-cover" />
+                                        <div key={i} className="relative h-10 w-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                                            <Image
+                                                src={`https://i.pravatar.cc/100?u=${i}`}
+                                                alt="user"
+                                                fill
+                                                sizes="40px"
+                                                className="object-cover"
+                                            />
                                         </div>
                                     ))}
                                     <div className="h-10 w-10 rounded-full border-2 border-white dark:border-slate-900 bg-blue-500 flex items-center justify-center text-[10px] font-black text-white">+12k</div>

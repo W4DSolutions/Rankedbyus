@@ -2,19 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, X, Loader2 } from 'lucide-react';
 
 interface AdminReviewActionButtonsProps {
     id: string;
 }
 
 export function AdminReviewActionButtons({ id }: AdminReviewActionButtonsProps) {
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = useState<'approve' | 'reject' | null>(null);
     const router = useRouter();
 
     const handleAction = async (action: 'approve' | 'reject') => {
         if (!confirm(`Are you sure you want to ${action} this review?`)) return;
 
-        setIsProcessing(true);
+        setIsProcessing(action);
         try {
             const response = await fetch('/api/admin/review-action', {
                 method: 'POST',
@@ -34,25 +35,35 @@ export function AdminReviewActionButtons({ id }: AdminReviewActionButtonsProps) 
             console.error('Review action error:', error);
             alert('An unexpected error occurred');
         } finally {
-            setIsProcessing(false);
+            setIsProcessing(null);
         }
     };
 
     return (
         <div className="flex gap-2">
             <button
-                className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all active:scale-90 disabled:opacity-50"
                 onClick={() => handleAction('approve')}
-                disabled={isProcessing}
+                disabled={isProcessing !== null}
+                title="Approve Review"
             >
-                Approve
+                {isProcessing === 'approve' ? (
+                    <Loader2 size={14} className="animate-spin" />
+                ) : (
+                    <Check size={16} strokeWidth={3} />
+                )}
             </button>
             <button
-                className="rounded-lg border border-red-600 bg-red-600/10 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-600/20 transition-colors disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90 disabled:opacity-50"
                 onClick={() => handleAction('reject')}
-                disabled={isProcessing}
+                disabled={isProcessing !== null}
+                title="Reject Review"
             >
-                Reject
+                {isProcessing === 'reject' ? (
+                    <Loader2 size={14} className="animate-spin" />
+                ) : (
+                    <X size={16} strokeWidth={3} />
+                )}
             </button>
         </div>
     );

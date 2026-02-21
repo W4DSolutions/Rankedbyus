@@ -2,12 +2,40 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { SubmitToolModal } from "@/components/SubmitToolModal";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SortSelector, SortOption } from "@/components/SortSelector";
 import { ToolCard } from "@/components/ToolCard";
 import { SponsoredBanner } from "@/components/SponsoredBanner";
-import { createClient } from "@/lib/supabase/server";
+import { AdSlot } from "@/components/AdSlot";
+import { CategoryFilters } from "@/components/CategoryFilters";
+import { createClient, createStaticClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import type { Category } from "@/types/models";
+import {
+    PenTool,
+    Palette,
+    Video,
+    Code2,
+    Cloud,
+    Globe,
+    Rocket,
+    Wrench,
+    ArrowLeft,
+    Search,
+    Inbox,
+    Filter,
+    User
+} from "lucide-react";
+import type { Category, ItemWithDetails, Tag } from "@/types/models";
+
+// Generate static params for all categories
+export async function generateStaticParams() {
+    const supabase = createStaticClient();
+    const { data: categories } = await supabase.from('categories').select('slug');
+
+    return (categories || []).map((category) => ({
+        slug: category.slug,
+    }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const supabase = await createClient();
@@ -38,11 +66,11 @@ export default async function CategoryPage({
     searchParams
 }: {
     params: Promise<{ slug: string }>,
-    searchParams: Promise<{ sort?: SortOption, tag?: string }>
+    searchParams: Promise<{ sort?: SortOption, tag?: string, pricing?: string, verified?: string }>
 }) {
     const supabase = await createClient();
     const { slug } = await params;
-    const { sort = 'top', tag } = await searchParams;
+    const { sort = 'top', tag, pricing, verified } = await searchParams;
 
     // Fetch category
     const { data: categoryData, error: categoryError } = await supabase
@@ -50,6 +78,7 @@ export default async function CategoryPage({
         .select('*')
         .eq('slug', slug)
         .single();
+
 
     if (categoryError || !categoryData) {
         notFound();
@@ -62,16 +91,39 @@ export default async function CategoryPage({
         .from('items')
         .select(`
             *,
-            item_tags!inner (
+            item_tags (
                 tags (*)
-            )
+            ),
+            articles (*)
         `)
         .eq('category_id', category.id)
         .eq('status', 'approved');
 
     if (tag) {
-        query = query.eq('item_tags.tags.slug', tag);
+        // To filter by tag efficiently, we first get item IDs that have this tag
+        const { data: tagMatches } = await supabase
+            .from('item_tags')
+            .select('item_id, tags!inner(slug)')
+            .eq('tags.slug', tag);
+
+        const itemIds = tagMatches?.map(m => m.item_id) || [];
+        if (itemIds.length > 0) {
+            query = query.in('id', itemIds);
+        } else {
+            query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
     }
+
+    if (pricing) {
+        query = query.eq('pricing_model', pricing);
+    }
+
+    if (verified === 'true') {
+        query = query.gt('vote_count', 10); // Placeholder logic for verified
+    }
+
+    // Primary: Sponsored, Secondary: Selected Sort
+    query = query.order('is_sponsored', { ascending: false });
 
     if (sort === 'new') {
         query = query.order('created_at', { ascending: false });
@@ -81,8 +133,21 @@ export default async function CategoryPage({
         query = query.order('score', { ascending: false });
     }
 
-    const { data: items } = await query;
-    const tools = (items || []) as any[];
+    const { data: itemsData } = await query;
+
+    // Fetch a sponsor for the AdSlot (Active & Sponsored)
+    const { data: potentialSponsors } = await supabase
+        .from('items')
+        .select('*, categories(name)')
+        .eq('is_sponsored', true)
+        .gt('sponsored_until', new Date().toISOString())
+        .limit(5);
+
+    const adSponsor = potentialSponsors && potentialSponsors.length > 0
+        ? potentialSponsors[Math.floor(Math.random() * potentialSponsors.length)] as unknown as ItemWithDetails
+        : null;
+
+    const tools = (itemsData || []) as ItemWithDetails[];
 
     // Fetch all available tags to show in filter bar
     const { data: allTagsData } = await supabase
@@ -90,111 +155,126 @@ export default async function CategoryPage({
         .select('*')
         .order('name');
 
-    const allTags = (allTagsData || []) as any[];
+    const allTags = (allTagsData || []) as Tag[];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="min-h-screen bg-white dark:bg-slate-950">
             {/* Header */}
-            <header className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
+            <header className="sticky top-0 z-[40] border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 items-center justify-between">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                                <span className="text-xl font-bold text-white">R</span>
+                    <div className="flex h-20 items-center justify-between">
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 dark:bg-blue-600 shadow-lg group-hover:scale-110 transition-transform">
+                                <span className="text-xl font-black text-white uppercase">R</span>
                             </div>
-                            <h1 className="text-xl font-bold text-white">RankedByUs</h1>
+                            <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">RankedByUs</h1>
                         </Link>
-                        <nav className="flex items-center gap-6">
-                            <Link href="/#categories" className="text-sm text-slate-300 hover:text-white transition-colors">
-                                Categories
+                        <nav className="flex items-center gap-8">
+                            <Link href="/blog" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                Intelligence
                             </Link>
-                            <SubmitToolModal />
+                            <Link href="/about" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                About
+                            </Link>
+                            <Link href="/profile" className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                <User size={20} />
+                            </Link>
+                            <ThemeToggle />
+                            <SubmitToolModal className="rounded-xl bg-slate-900 dark:bg-blue-600 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/10 active:scale-95" />
                         </nav>
                     </div>
                 </div>
             </header>
 
             {/* Category Hero */}
-            <section className="border-b border-slate-700/50 bg-gradient-to-r from-blue-500/10 to-purple-500/10 py-12">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center gap-4">
-                        <div className="text-5xl">
-                            {category.name.includes('Writing') ? '✍️' :
-                                category.name.includes('Image') ? '🎨' :
-                                    category.name.includes('Video') ? '🎬' :
-                                        category.name.includes('Code') ? '💻' :
-                                            category.name.includes('Hosting') ? '☁️' :
-                                                category.name.includes('eSIM') ? '📶' :
-                                                    category.name.includes('SaaS') ? '🚀' : '🔧'}
+            <section className="relative py-24 overflow-hidden border-b border-slate-200 dark:border-slate-800">
+                <div className="absolute inset-0 bg-blue-600/5 dark:bg-blue-600/10" />
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
+                    <Link href="/#categories" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 mb-8 transition-colors group">
+                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                        Back to Registry
+                    </Link>
+
+                    <div className="flex flex-col md:flex-row md:items-center gap-8">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400">
+                            {(() => {
+                                const size = 36;
+                                const strokeWidth = 1.5;
+                                if (category.slug === 'ai-writing-tools') return <PenTool size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'ai-image-generators') return <Palette size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'ai-video-tools') return <Video size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'ai-code-assistants') return <Code2 size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'cloud-hosting') return <Cloud size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'esim-providers') return <Globe size={size} strokeWidth={strokeWidth} />;
+                                if (category.slug === 'saas-essentials') return <Rocket size={size} strokeWidth={strokeWidth} />;
+                                return <Wrench size={size} strokeWidth={strokeWidth} />;
+                            })()}
                         </div>
                         <div>
-                            <h2 className="text-3xl font-bold text-white">{category.name}</h2>
-                            <p className="mt-2 text-slate-300">{category.description}</p>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">Master Registry</span>
+                                <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{tools.length} Assets Ranked</span>
+                            </div>
+                            <h2 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-4">{category.name}</h2>
+                            <p className="max-w-2xl text-lg text-slate-600 dark:text-slate-400 font-medium leading-relaxed">{category.description}</p>
                         </div>
-                    </div>
-                    <div className="mt-6 flex items-center gap-6 text-sm text-slate-400">
-                        <span>{tools.length} {tag ? `"${tag}"` : ''} tools ranked</span>
-                        <span>•</span>
-                        <span>Updated daily</span>
                     </div>
                 </div>
             </section>
 
             {/* Rankings List */}
-            <section className="py-12">
+            <section className="py-20 bg-slate-50/50 dark:bg-slate-950/50">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
                     {/* Filter & Sort Bar */}
-                    <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
-                        <div className="flex items-center gap-2 min-w-max">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">Filter by:</span>
-                            <Link
-                                href={`/category/${slug}${sort ? `?sort=${sort}` : ''}`}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-full text-xs font-medium transition-all border",
-                                    !tag ? "bg-slate-700 border-slate-600 text-white shadow-lg" : "border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
-                                )}
-                            >
-                                All Tools
-                            </Link>
-                            {allTags?.map((ctag) => (
-                                <Link
-                                    key={ctag.id}
-                                    href={`/category/${slug}?tag=${ctag.slug}${sort ? `&sort=${sort}` : ''}`}
-                                    className={cn(
-                                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap",
-                                        tag === ctag.slug ? "bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/20" : "border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
-                                    )}
-                                >
-                                    {ctag.name}
-                                </Link>
-                            ))}
+                    <div className="mb-12 flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+                        <CategoryFilters
+                            tags={allTags}
+                            baseUrl={`/category/${slug}`}
+                            currentTagSlug={tag}
+                        />
+                        <div className="flex-shrink-0 pt-1">
+                            <SortSelector />
                         </div>
-                        <SortSelector />
                     </div>
 
                     <SponsoredBanner />
 
                     {tools.length === 0 ? (
-                        <div className="rounded-2xl border border-slate-700/30 bg-slate-800/20 p-20 text-center backdrop-blur-sm">
-                            <div className="text-6xl mb-6 opacity-20">
-                                {tag ? '🔍' : '📭'}
+                        <div className="rounded-[3rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-24 text-center backdrop-blur-xl shadow-2xl relative overflow-hidden">
+                            <div className="absolute inset-0 bg-blue-600/5 dark:bg-blue-600/10" />
+                            <div className="relative z-10">
+                                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 mb-8">
+                                    {tag ? <Search size={48} strokeWidth={1} /> : <Inbox size={48} strokeWidth={1} />}
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-4">
+                                    {tag ? `No results for &quot;{tag}&quot;` : 'Index is Empty'}
+                                </h3>
+                                <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium">
+                                    {tag ? 'Our scanners couldn&apos;t identify any assets fitting this classification.' : 'Be the pioneer. Deploy the first asset to this niche registry.'}
+                                </p>
+                                {!tag && (
+                                    <SubmitToolModal className="mt-10 rounded-2xl bg-slate-900 dark:bg-blue-600 px-10 py-5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-95" />
+                                )}
                             </div>
-                            <h3 className="text-2xl font-bold text-white">
-                                {tag ? `No tools tagged "${tag}"` : 'This category is empty'}
-                            </h3>
-                            <p className="mt-3 text-slate-400 max-w-sm mx-auto">
-                                {tag ? 'We couldn\'t find any tools with this specific tag. Try another one!' : 'Be the pioneer! Submit the first tool for this category using the button above.'}
-                            </p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {tools.map((tool, index) => (
-                                <ToolCard
-                                    key={tool.id}
-                                    tool={tool}
-                                    rank={index + 1}
-                                />
+                                <div key={tool.id}>
+                                    <ToolCard
+                                        tool={tool}
+                                        rank={index + 1}
+                                        priority={index < 2}
+                                    />
+                                    {/* Ad Slot after Rank #3 */}
+                                    {index === 2 && (
+                                        <div className="mt-6 mb-6">
+                                            <AdSlot variant="display" sponsor={adSponsor} />
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     )}

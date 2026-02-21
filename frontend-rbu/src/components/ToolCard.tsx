@@ -1,131 +1,209 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
+import {
+    ArrowUpRight,
+    TrendingUp,
+    ShieldCheck,
+    Share2,
+    Sparkles,
+    Scale
+} from 'lucide-react';
 import { VoteButtons } from './VoteButtons';
 import { ReviewModal } from './ReviewModal';
 import { TagBadge } from './TagBadge';
 import { StarRating } from './StarRating';
-import { cn } from '@/lib/utils';
+
+import { ToolIcon } from '@/components/ToolIcon';
+import { cn, getLogoUrl } from '@/lib/utils';
 import { ItemWithDetails } from '@/types/models';
 
 interface ToolCardProps {
     tool: ItemWithDetails;
     rank?: number;
     showCategory?: boolean;
+    priority?: boolean;
 }
 
-export function ToolCard({ tool, rank, showCategory }: ToolCardProps) {
-    const isTopThree = rank && rank <= 3;
+export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) {
 
     return (
         <div
             id={tool.slug}
-            className="group relative overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6 backdrop-blur-md transition-all hover:border-blue-500/40 hover:bg-slate-800/60"
+            className="group relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-8 backdrop-blur-xl transition-all hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-900/60 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5"
             itemScope
             itemType="https://schema.org/SoftwareApplication"
         >
-            {/* Glass reflection effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            {/* Tactical background detail */}
+            <div className="absolute -right-4 -top-4 text-blue-500/5 font-black text-9xl italic pointer-events-none group-hover:text-blue-500/10 transition-colors">
+                {rank && `#${rank}`}
+            </div>
 
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+            {tool.is_sponsored && (!tool.sponsored_until || new Date(tool.sponsored_until) > new Date()) && (
+                <div className="absolute top-0 right-0 z-20">
+                    <div className="bg-gradient-to-l from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-500 text-white text-[9px] font-black uppercase tracking-widest px-6 py-2 rounded-bl-3xl shadow-lg flex items-center gap-2">
+                        <Sparkles size={12} className="animate-pulse" />
+                        Sponsored Analysis
+                    </div>
+                </div>
+            )}
+
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-10 relative z-10">
                 {/* Rank & Vote */}
-                <div className="flex flex-col items-center min-w-[80px]">
+                <div className="flex flex-col items-center min-w-[100px]">
                     {rank && (
                         <div className={cn(
-                            "text-4xl font-black mb-4 select-none",
-                            rank === 1 ? 'text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.3)]' :
-                                rank === 2 ? 'text-slate-300' :
-                                    rank === 3 ? 'text-amber-600' :
-                                        'text-slate-600'
+                            "text-5xl font-black mb-6 select-none uppercase tracking-tighter leading-none",
+                            rank === 1 ? 'text-blue-600 dark:text-blue-500 drop-shadow-[0_0_15px_rgba(37,99,235,0.2)]' :
+                                rank === 2 ? 'text-slate-400 dark:text-slate-600' :
+                                    rank === 3 ? 'text-slate-300 dark:text-slate-700' :
+                                        'text-slate-100 dark:text-slate-900'
                         )}>
-                            {rank}
+                            {rank.toString().padStart(2, '0')}
                         </div>
                     )}
                     <VoteButtons
                         itemId={tool.id}
                         initialScore={tool.score}
-                        initialVoteCount={tool.vote_count}
                     />
                 </div>
 
                 {/* Logo */}
-                <div className="flex-shrink-0 h-24 w-24 rounded-3xl bg-slate-900 border border-slate-700/50 overflow-hidden flex items-center justify-center p-3 shadow-2xl group-hover:scale-105 transition-transform duration-300">
-                    <img
-                        src={tool.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(tool.name)}&background=1e293b&color=fff&size=128&bold=true`}
-                        alt={tool.name}
-                        className="h-full w-full object-contain rounded-xl"
-                        itemProp="image"
+                <div className="relative flex-shrink-0 h-28 w-28 rounded-[2.5rem] bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800/50 overflow-hidden flex items-center justify-center p-6 shadow-2xl group-hover:scale-105 transition-transform duration-500 animate-shimmer relative">
+                    <ToolIcon
+                        url={tool.logo_url}
+                        name={tool.name}
+                        websiteUrl={tool.website_url}
+                        fill
+                        unoptimized={true}
+                        priority={priority}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="h-full w-full"
+                        imgClassName="object-contain p-4"
                     />
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 text-center md:text-left">
-                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 mb-2">
+                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 mb-3">
                         <Link href={`/tool/${tool.slug}`}>
-                            <h3 className="text-2xl font-black text-white hover:text-blue-400 transition-colors uppercase tracking-tight" itemProp="name">
+                            <h3 className="text-3xl font-black text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase tracking-tight leading-none" itemProp="name">
                                 {tool.name}
                             </h3>
                         </Link>
                         {showCategory && tool.categories && (
                             <Link
                                 href={`/category/${tool.categories.slug}`}
-                                className="text-[10px] font-bold text-blue-400/60 hover:text-blue-400 uppercase tracking-widest border border-blue-500/20 px-2 py-0.5 rounded"
+                                className="text-[10px] font-black text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white uppercase tracking-widest border-2 border-blue-600/10 px-3 py-1 rounded-xl transition-all"
                             >
                                 {tool.categories.name}
                             </Link>
                         )}
+                        {tool.pricing_model && (
+                            <div className={cn(
+                                "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-xl border-2 transition-all",
+                                tool.pricing_model === 'Free'
+                                    ? "text-emerald-500 border-emerald-500/10 bg-emerald-500/5 hover:bg-emerald-500 hover:text-white"
+                                    : tool.pricing_model === 'Paid'
+                                        ? "text-amber-500 border-amber-500/10 bg-amber-500/5 hover:bg-amber-500 hover:text-white"
+                                        : "text-blue-500 border-blue-500/10 bg-blue-500/5 hover:bg-blue-500 hover:text-white"
+                            )}>
+                                {tool.pricing_model}
+                            </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
-                            {tool.item_tags?.map((it: any) => (
+                            {tool.item_tags?.filter(it => it.tags).map((it) => (
                                 <TagBadge
                                     key={it.tags.id}
                                     name={it.tags.name}
                                     slug={it.tags.slug}
                                     color={it.tags.color}
+                                    href={tool.categories ? `/category/${tool.categories.slug}/${it.tags.slug}` : undefined}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    <div className="flex justify-center md:justify-start mb-3">
+                    <div className="flex justify-center md:justify-start items-center gap-3 mb-4">
                         <StarRating rating={tool.average_rating} size="sm" />
-                        <span className="ml-2 text-[10px] text-slate-500 font-bold uppercase tracking-tighter self-center">
-                            ({tool.review_count} reviews)
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                            Based on {tool.review_count} Intelligence Signals
                         </span>
                     </div>
 
-                    <p className="text-slate-300 leading-relaxed max-w-3xl text-sm md:text-base" itemProp="description">
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl text-base font-medium mb-8" itemProp="description">
                         {tool.description}
                     </p>
 
-                    <div className="mt-6 flex flex-wrap justify-center md:justify-start items-center gap-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                        <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            {tool.vote_count} Community Votes
+                    <div className="flex flex-wrap justify-center md:justify-start items-center gap-6">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-xl">
+                            <TrendingUp size={14} className="text-blue-500" />
+                            {tool.vote_count} Power Rating
                         </div>
-                        <ReviewModal itemId={tool.id} itemName={tool.name} />
-                        <div className="flex items-center gap-2 text-slate-400">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Verified for 2026
-                        </div>
+                        <ReviewModal
+                            itemId={tool.id}
+                            itemName={tool.name}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors bg-slate-100/50 dark:bg-slate-900 px-4 py-2 rounded-xl"
+                        />
+                        {tool.is_verified && (
+                            <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/5 px-4 py-2 rounded-xl border border-blue-500/10">
+                                <ShieldCheck size={14} />
+                                Founder Verified
+                            </div>
+                        )}
+                        {!tool.is_verified && (
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 bg-slate-500/5 px-4 py-2 rounded-xl border border-slate-500/10">
+                                <ShieldCheck size={14} />
+                                Community Audited
+                            </div>
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                navigator.clipboard.writeText(`${window.location.origin}/tool/${tool.slug}`);
+                            }}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-500 transition-colors flex items-center gap-2"
+                        >
+                            <Share2 size={14} />
+                            Share
+                        </button>
+                        {tool.categories && (
+                            <Link
+                                href={`/compare/${tool.slug}-vs-leader`}
+                                className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-500 transition-colors flex items-center gap-2"
+                                title="Compare against category leader"
+                            >
+                                <Scale size={14} />
+                                Compare
+                            </Link>
+                        )}
+                        {tool.articles && tool.articles.length > 0 && (
+                            <Link
+                                href={`/article/${tool.articles[0].slug}`}
+                                className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors flex items-center gap-2"
+                                title="Read our deep analysis"
+                            >
+                                <Sparkles size={14} className="animate-pulse" />
+                                Read Study
+                            </Link>
+                        )}
                     </div>
                 </div>
 
                 {/* CTA */}
-                <div className="flex flex-col gap-3 min-w-[180px] w-full md:w-auto">
-                    <a
-                        href={tool.affiliate_link || tool.website_url || '#'}
+                <div className="flex flex-col gap-3 min-w-[200px] w-full md:w-auto pt-4">
+                    <Link
+                        href={`/go/${tool.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-bold text-white hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40 active:scale-95"
+                        className="flex items-center justify-center gap-3 rounded-[1.25rem] bg-slate-900 dark:bg-blue-600 px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-slate-800 dark:hover:bg-blue-500 transition-all shadow-xl shadow-blue-600/20 active:scale-95 group-hover:scale-105"
                         itemProp="url"
                     >
-                        Visit Tool
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </a>
+                        Deploy Interface
+                        <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </Link>
+
                 </div>
             </div>
         </div>

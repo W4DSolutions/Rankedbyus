@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
     template: `%s | ${siteConfig.name}`,
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { CookieBanner } from "@/components/CookieBanner";
 
 export default function RootLayout({
@@ -38,12 +40,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <CookieBanner />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   );
