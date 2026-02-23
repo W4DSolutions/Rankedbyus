@@ -11,7 +11,6 @@ import {
     Layout,
     FileText,
     Loader2,
-    Sparkles,
     CreditCard,
     ArrowLeft,
     ShieldCheck
@@ -175,7 +174,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const handlePaymentSuccess = (details: any) => {
         const txId = details.id || 'PAYPAL_TX_' + Date.now();
         setTransactionId(txId);

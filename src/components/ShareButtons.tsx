@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Share2, Twitter, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
+import { Twitter, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ShareButtonsProps {

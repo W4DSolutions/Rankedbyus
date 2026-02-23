@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import {
     ArrowUpRight,
@@ -16,7 +15,7 @@ import { TagBadge } from './TagBadge';
 import { StarRating } from './StarRating';
 
 import { ToolIcon } from '@/components/ToolIcon';
-import { cn, getLogoUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { ItemWithDetails } from '@/types/models';
 
 interface ToolCardProps {

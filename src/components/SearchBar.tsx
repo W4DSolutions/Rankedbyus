@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Search, Loader2, Star } from 'lucide-react';
 import { ItemWithDetails } from '@/types/models';
-import { getLogoUrl } from '@/lib/utils';
 import { ToolIcon } from '@/components/ToolIcon';
 
 function SearchBarContent() {

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Star, MessageSquare, History, User, Rocket } from 'lucide-react';
 import { ToolCard } from '@/components/ToolCard';
-import { ItemWithDetails, Review, ReviewWithItem } from '@/types/models';
+import { ItemWithDetails, ReviewWithItem } from '@/types/models';
 import { cn } from '@/lib/utils';
 import { ToolIcon } from '@/components/ToolIcon';
 

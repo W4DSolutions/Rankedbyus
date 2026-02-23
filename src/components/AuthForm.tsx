@@ -3,26 +3,26 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { getSupabaseClient } from '@/lib/supabase/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
+
+const emptySubscribe = () => () => { };
 
 export function AuthForm({ next }: { next?: string }) {
     const supabase = getSupabaseClient();
     const { theme } = useTheme();
     const router = useRouter();
-    const [origin, setOrigin] = useState('');
+    const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
     const [isSignedIn, setIsSignedIn] = useState(false);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
     useEffect(() => {
-        setOrigin(window.location.origin);
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             console.log('Auth event:', event, 'Session:', !!session);
             if (event === 'SIGNED_IN' || session) {
                 setIsSignedIn(true);
-                router.refresh(); // Important for server components to pull the new cookie
-                // Use setTimeout to ensure the cookie is fully set in the browser
+                router.refresh();
                 setTimeout(() => {
                     window.location.href = next || '/profile';
                 }, 500);
@@ -32,9 +32,9 @@ export function AuthForm({ next }: { next?: string }) {
         return () => {
             subscription.unsubscribe();
         };
-    }, [supabase, next]);
+    }, [supabase, next, router]);
 
-    if (!origin) return null;
+    if (!mounted) return null;
 
     return (
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl">
@@ -61,7 +61,7 @@ export function AuthForm({ next }: { next?: string }) {
             ) : (
 
                 <Auth
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
                     supabaseClient={supabase as any}
                     appearance={{
                         theme: ThemeSupa,

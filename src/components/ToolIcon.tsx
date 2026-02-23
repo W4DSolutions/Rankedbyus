@@ -38,7 +38,7 @@ export function ToolIcon({
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSrc(getLogoUrl(url, name, websiteUrl));
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         setErrorCount(0);
     }, [url, name, websiteUrl]);
 

@@ -144,7 +144,7 @@ export default async function CategoryPage({
         .limit(5);
 
     const adSponsor = potentialSponsors && potentialSponsors.length > 0
-        ? potentialSponsors[Math.floor(Math.random() * potentialSponsors.length)] as unknown as ItemWithDetails
+        ? potentialSponsors[new Date().getDate() % potentialSponsors.length] as unknown as ItemWithDetails
         : null;
 
     const tools = (itemsData || []) as ItemWithDetails[];

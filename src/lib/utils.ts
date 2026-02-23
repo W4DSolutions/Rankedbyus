@@ -21,7 +21,7 @@ export function getLogoUrl(logoUrl: string | null | undefined, name: string, web
         try {
             const domain = logoUrl.split('logo.clearbit.com/')[1];
             if (domain) return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-        } catch (e) { }
+        } catch (_e) { }
     }
 
     // 2. Convert problematic gstatic/faviconV2 to simpler S2 format
@@ -47,7 +47,7 @@ export function getLogoUrl(logoUrl: string | null | undefined, name: string, web
                 domain = domain.replace('www.', '');
                 return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
             }
-        } catch (e) {
+        } catch (_e) {
             // If parsing fails for any reason, try a blunt regex fallback for 'url=...'
             const match = logoUrl.match(/[?&]url=([^&]+)/);
             if (match && match[1]) {
@@ -62,7 +62,7 @@ export function getLogoUrl(logoUrl: string | null | undefined, name: string, web
         try {
             const domain = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`).hostname.replace('www.', '');
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-        } catch (e) { }
+        } catch (_e) { }
     }
 
     // 4. Ultimate Fallback: UI Avatars

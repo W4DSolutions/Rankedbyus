@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import {
     X,
     CheckCircle2,
-    AlertCircle,
     ShieldCheck,
     Mail,
     Link as LinkIcon,
@@ -24,7 +23,6 @@ export function ClaimListingModal({ itemId, itemName, className, children }: Cla
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [errorMessage, setErrorMessage] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         proofUrl: '',
@@ -63,7 +61,6 @@ export function ClaimListingModal({ itemId, itemName, className, children }: Cla
 
         setIsSubmitting(true);
         setSubmitStatus('idle');
-        setErrorMessage('');
 
         try {
             const response = await fetch('/api/tool/claim', {
@@ -93,7 +90,6 @@ export function ClaimListingModal({ itemId, itemName, className, children }: Cla
         } catch (error) {
             console.error('Claim error:', error);
             setSubmitStatus('error');
-            setErrorMessage(error instanceof Error ? error.message : 'Failed to process claim');
         } finally {
             setIsSubmitting(false);
         }

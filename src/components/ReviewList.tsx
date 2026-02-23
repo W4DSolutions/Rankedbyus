@@ -6,7 +6,6 @@ import { Review } from '@/types/models';
 import { StarRating } from '@/components/StarRating';
 import { ReviewHelpfulButton } from '@/components/ReviewHelpfulButton';
 import { Inbox, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ReviewListProps {
     reviews: Review[];
