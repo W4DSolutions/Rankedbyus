@@ -3,7 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { ItemStatus } from '@/types/models';
 import { sendEmail } from '@/lib/email';
 
+import { verifyAdmin } from '@/lib/auth-guards';
+
 export async function POST(request: NextRequest) {
+    // Auth Guard
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const body = (await request.json()) as { id: string; action: string; tags?: string[] };
         const { id, action } = body;

@@ -42,12 +42,11 @@ export async function updateSession(request: NextRequest, _options?: { isAdmin?:
 
         // Return a redirect response setting the needed cookies
         const redirectResponse = NextResponse.redirect(redirectUrl)
-        // Copy cookies over from supabaseResponse to the redirectResponse
         supabaseResponse.cookies.getAll().forEach(cookie => {
             redirectResponse.cookies.set(cookie.name, cookie.value)
         })
-        return redirectResponse
+        return { supabaseResponse: redirectResponse, user: null }
     }
 
-    return supabaseResponse
+    return { supabaseResponse, user }
 }

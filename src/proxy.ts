@@ -5,7 +5,7 @@ import { updateSession } from '@/lib/supabase/middleware';
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    const response = await updateSession(request);
+    const { supabaseResponse: response, user: middlewareUser } = await updateSession(request);
 
     try {
         // Ensure rbu_session_id exists for all users
@@ -24,13 +24,21 @@ export async function proxy(request: NextRequest) {
 
     // Only protect /admin (but allow /admin/login)
     if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-        const session = request.cookies.get('admin_session');
-
-        if (!session || session.value !== 'authenticated') {
-            const url = request.nextUrl.clone();
-            url.pathname = '/admin/login';
-            return NextResponse.redirect(url);
+        // 1. Check legacy admin_session cookie
+        const legacySession = request.cookies.get('admin_session');
+        if (legacySession?.value === 'authenticated') {
+            return response;
         }
+
+        // 2. Check Supabase RBAC
+        if (middlewareUser?.app_metadata?.role === 'admin') {
+            return response;
+        }
+
+        // Redirect to login if neither is present
+        const url = request.nextUrl.clone();
+        url.pathname = '/admin/login';
+        return NextResponse.redirect(url);
     }
 
     return response;

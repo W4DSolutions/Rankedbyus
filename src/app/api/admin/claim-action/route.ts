@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail } from '@/lib/email';
 
+import { verifyAdmin } from '@/lib/auth-guards';
+
 export async function POST(request: NextRequest) {
+    // Auth Guard
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
 
     try {
