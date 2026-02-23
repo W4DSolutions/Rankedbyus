@@ -1,35 +1,64 @@
-# RankedByUs - Portfolio Platform
+# RankedByUs - Community-Driven Tool Rankings
 
-This repository is organized into two main sections to simplify development and deployment.
+A modern ranking platform where the community votes on the best tools across categories like AI Writing, Image Generation, Code Assistants, and more.
 
-## 📂 Repository Structure
+## 🚀 Tech Stack
 
-- **[frontend-rbu/](./frontend-rbu)**: The Next.js application (Frontend & API routes). This is the source code for the platform.
-- **[backend-rbu/](./backend-rbu)**: Database infrastructure and project documentation.
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions, RLS)
+- **Deployment:** Vercel (Frontend) + Supabase (Database)
 
-## 🚀 Deployment
+## 📂 Project Structure
 
-The frontend is optimized for [Vercel](https://vercel.com).
-The backend is powered by [Supabase](https://supabase.com).
+```
+├── src/                    # Application source code
+│   ├── app/                # Next.js pages & API routes
+│   ├── components/         # Reusable UI components
+│   ├── lib/                # Supabase clients, utilities
+│   ├── config/             # Site configuration
+│   └── types/              # TypeScript type definitions
+├── public/                 # Static assets
+├── types/                  # Database type definitions
+├── scripts/                # Data seeding & migration scripts
+├── migrations/             # Incremental SQL migrations
+├── supabase/               # Core database schema & seed data
+├── docs/                   # Project documentation
+└── .env.local              # Environment variables (not in git)
+```
+
+## 🛠️ Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+```
 
 ## 🛡️ Admin Dashboard
-You can manage tools and reviews at `/admin`.
+
+Manage tools and reviews at `/admin`:
 1. Configure `ADMIN_PASSWORD` in your environment variables.
 2. Login at `/admin/login`.
 3. Approve/Reject new submissions in real-time.
 
-### Vercel Instructions:
-1. Link this repository to your Vercel project.
-2. Set the **Root Directory** to `frontend-rbu` in the project settings.
-3. Configure your Supabase environment variables in Vercel.
+## 📊 Environment Variables
 
-## 🛠️ Development
-
-To start the development server:
-```bash
-cd frontend-rbu
-npm install
-npm run dev
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ADMIN_PASSWORD=your_admin_password
 ```
 
-For database schema and documentation, see [backend-rbu/](./backend-rbu).
+## 📖 Documentation
+
+See the `docs/` folder for:
+- **fullproject-building-plan.md** — Project roadmap
+- **MASTER_PLAN.md** — Strategy & architecture
+- **TESTING_GUIDE.md** — QA checklist
+- **SUPABASE_INTEGRATION_COMPLETE.md** — Database setup guide
