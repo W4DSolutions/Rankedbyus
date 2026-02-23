@@ -3,11 +3,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, MessageSquare, History, User, Rocket } from 'lucide-react';
+import { Star, MessageSquare, History, User, Rocket, PencilLine } from 'lucide-react';
 import { ToolCard } from '@/components/ToolCard';
 import { ItemWithDetails, ReviewWithItem } from '@/types/models';
 import { cn } from '@/lib/utils';
 import { ToolIcon } from '@/components/ToolIcon';
+import { EditUserToolModal } from '@/components/EditUserToolModal';
 
 interface ProfileViewProps {
     displayName: string;
@@ -20,6 +21,7 @@ interface ProfileViewProps {
 
 export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvotedTools, reviews, submissions }: ProfileViewProps) {
     const [activeTab, setActiveTab] = useState<'upvoted' | 'reviews' | 'submissions'>('upvoted');
+    const [editingTool, setEditingTool] = useState<ItemWithDetails | null>(null);
 
     return (
         <div className="grid lg:grid-cols-12 gap-12">
@@ -253,7 +255,25 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                                                         {tool.status}
                                                     </span>
                                                 </div>
-                                                <div className="text-xs text-slate-500 truncate">{tool.website_url}</div>
+                                                <div className="text-xs text-slate-500 truncate mb-3">{tool.website_url}</div>
+
+                                                <div className="flex items-center gap-2 mt-auto">
+                                                    <Link
+                                                        href={`/tool/${tool.slug}`}
+                                                        className="text-[10px] uppercase font-black tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                    >
+                                                        View Page
+                                                    </Link>
+                                                    {!isAnonymous && (
+                                                        <button
+                                                            onClick={() => setEditingTool(tool)}
+                                                            className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-widest bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                                        >
+                                                            <PencilLine size={12} />
+                                                            Edit Data
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -271,6 +291,14 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                     </div>
                 )}
             </div>
+
+            {/* Modals */}
+            {editingTool && (
+                <EditUserToolModal
+                    tool={editingTool}
+                    onClose={() => setEditingTool(null)}
+                />
+            )}
         </div>
     );
 }
