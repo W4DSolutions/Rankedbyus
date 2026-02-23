@@ -28,7 +28,7 @@ import {
   Sparkles,
   type LucideIcon
 } from "lucide-react";
-import { ItemWithDetails } from "@/types/models";
+import { ItemWithDetails, Article, Item, ReviewWithItem } from "@/types/models";
 import Image from "next/image";
 import { getLogoUrl } from '@/lib/utils';
 import { ToolIcon } from '@/components/ToolIcon';
@@ -257,7 +257,7 @@ export default async function Home() {
                         <div className="h-6 w-6 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex-shrink-0 flex items-center justify-center overflow-hidden">
                           <ToolIcon
                             url={item.logo_url}
-                            name={item.name}
+                            name={item.name || ''}
                             websiteUrl={item.website_url}
                             width={16}
                             height={16}

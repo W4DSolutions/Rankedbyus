@@ -47,7 +47,7 @@ export default async function AdminPage() {
             categories:category_id (name, slug)
         `)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as unknown as { data: any[] };
 
     const pendingSubmissions = (pendingItems || []) as ItemWithDetails[];
 
@@ -59,7 +59,7 @@ export default async function AdminPage() {
             categories:category_id (name, slug)
         `)
         .eq('status', 'approved')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as unknown as { data: any[] };
 
     const approvedAssets = (approvedItems || []) as ItemWithDetails[];
 
@@ -71,7 +71,7 @@ export default async function AdminPage() {
             items:item_id (name)
         `)
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as unknown as { data: any[] };
 
     const pendingReviews = (pendingReviewsData || []) as (Review & { items: { name: string } })[];
 

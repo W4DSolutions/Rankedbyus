@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X,
@@ -50,18 +50,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
     const [step, setStep] = useState<'form' | 'payment'>('form');
     const [transactionId, setTransactionId] = useState<string | null>(null);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Fetch categories when modal opens
-    useEffect(() => {
-        if (isOpen && categories.length === 0) {
-            fetchCategories();
-        }
-    }, [isOpen, categories.length]);
-
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         setIsLoadingCategories(true);
         try {
             const response = await fetch('/api/categories');
@@ -73,11 +62,22 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                 }
             }
         } catch (error) {
-            console.error('Failed to fetch categories:', categories);
+            console.error('Failed to fetch categories:', error);
         } finally {
             setIsLoadingCategories(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Fetch categories when modal opens
+    useEffect(() => {
+        if (isOpen && categories.length === 0) {
+            fetchCategories();
+        }
+    }, [isOpen, categories.length, fetchCategories]);
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
