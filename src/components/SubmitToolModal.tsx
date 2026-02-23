@@ -137,9 +137,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
         try {
             const payload = {
                 ...formData,
-                transaction_id: txId || transactionId,
-                payment_amount: 2.00,
-                payment_status: 'paid'
+                orderId: txId || transactionId,
             };
 
             const response = await fetch('/api/submit-tool', {
@@ -175,10 +173,9 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
     };
 
 
-    const handlePaymentSuccess = (details: any) => {
-        const txId = details.id || 'PAYPAL_TX_' + Date.now();
-        setTransactionId(txId);
-        handleSubmit(txId);
+    const handlePaymentSuccess = (orderId: string) => {
+        setTransactionId(orderId);
+        handleSubmit(orderId);
     };
 
     const handleInputChange = (field: string, value: string) => {
@@ -549,11 +546,8 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                                                 ],
                                                             });
                                                         }}
-                                                        onApprove={async (data, actions) => {
-                                                            if (actions.order) {
-                                                                const details = await actions.order.capture();
-                                                                handlePaymentSuccess(details);
-                                                            }
+                                                        onApprove={async (data) => {
+                                                            handlePaymentSuccess(data.orderID);
                                                         }}
                                                         onError={(err) => {
                                                             console.error("PayPal Error:", err);

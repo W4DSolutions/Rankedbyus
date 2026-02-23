@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import { captureOrder } from '@/lib/paypal';
 
 export async function POST(request: NextRequest) {
     try {
-        const supabase = createAdminClient();
         const body = await request.json() as {
             name: string;
             website_url: string;
@@ -13,12 +13,29 @@ export async function POST(request: NextRequest) {
             category: string;
             logo_url?: string;
             submitter_email?: string;
-            // Payment info
-            transaction_id?: string;
-            payment_amount?: number;
-            payment_status?: string;
+            orderId?: string; // Expecting orderId from client to capture on server
         };
-        const { name, website_url, description, category } = body;
+
+        const { name, website_url, description, category, orderId } = body;
+
+        // 1. Mandatory Fraud Check: Verify and Capture PayPal Order
+        if (!orderId) {
+            return NextResponse.json({ error: 'Payment is required' }, { status: 402 });
+        }
+
+        let paymentDetail;
+        try {
+            paymentDetail = await captureOrder(orderId);
+        } catch (error) {
+            console.error('PayPal Verification Failure:', error);
+            return NextResponse.json({ error: 'Payment verification failed' }, { status: 402 });
+        }
+
+        if (paymentDetail.status !== 'COMPLETED') {
+            return NextResponse.json({ error: 'Payment not completed' }, { status: 402 });
+        }
+
+        const supabase = createAdminClient();
 
         // Validate required fields
         if (!name || !website_url || !category) {
@@ -123,10 +140,10 @@ export async function POST(request: NextRequest) {
                 vote_count: 0,
                 user_id: user?.id || null, // Link to authenticated user
                 submitter_email: user?.email || body.submitter_email || null, // Auto-fill email if logged in
-                // Payment fields
-                transaction_id: body.transaction_id || null,
-                payment_amount: body.payment_amount || 0.00,
-                payment_status: body.payment_status || 'unpaid',
+                // VERIFIED Payment fields
+                transaction_id: paymentDetail.transactionId,
+                payment_amount: parseFloat(paymentDetail.amount),
+                payment_status: 'paid', // Hardcoding as paid because verification passed
             })
             .select()
             .single();
