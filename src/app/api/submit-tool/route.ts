@@ -35,7 +35,37 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid Website URL' }, { status: 400 });
         }
 
-        // TODO: Implement Rate Limiting (e.g. 5 submissions per hour per IP)
+        // 3. Rate Limiting Check (Max 5 submissions per hour)
+        const ONE_HOUR_AGO = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+        // Get authenticated user if available
+        const authClient = await createClient();
+        const { data: { user } } = await authClient.auth.getUser();
+
+        let recentSubmissionsQuery = supabase
+            .from('items')
+            .select('id', { count: 'exact' })
+            .gt('created_at', ONE_HOUR_AGO);
+
+        if (user) {
+            recentSubmissionsQuery = recentSubmissionsQuery.eq('user_id', user.id);
+        } else if (body.submitter_email) {
+            recentSubmissionsQuery = recentSubmissionsQuery.eq('submitter_email', body.submitter_email);
+        } else {
+            // If No user and no email, we can't reliably rate limit by ID, 
+            // but we could use IP in a real production environment with Redis.
+        }
+
+        const { count: submissionCount, error: countError } = await recentSubmissionsQuery;
+
+        if (countError) {
+            console.error('Rate limit check error:', countError);
+        } else if (submissionCount !== null && submissionCount >= 5) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded. You can only submit 5 tools per hour.' },
+                { status: 429 }
+            );
+        }
 
         // Find category ID
         const { data: categoryData, error: categoryError } = await supabase
@@ -72,10 +102,6 @@ export async function POST(request: NextRequest) {
                 { status: 409 }
             );
         }
-
-        // Get authenticated user if available
-        const authClient = await createClient();
-        const { data: { user } } = await authClient.auth.getUser();
 
         // Get Session ID for tracking
         const cookieStore = await cookies();
