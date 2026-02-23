@@ -386,7 +386,7 @@ export default async function ToolDetailPage({
                                     <div>
                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Audit Sync</div>
                                         <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">
-                                            {new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric', day: 'numeric' }).toUpperCase()}
+                                            {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' }).toUpperCase()}
                                         </div>
                                     </div>
                                 </div>

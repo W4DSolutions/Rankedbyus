@@ -116,7 +116,7 @@ export function TrafficChart({ data, className }: TrafficChartProps) {
                 <div className="absolute bottom-2 left-6 right-6 flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">
                     {data.map((d, i) => (
                         (i % Math.ceil(data.length / 5) === 0 || i === data.length - 1) ? (
-                            <span key={d.date}>{new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                            <span key={d.date}>{new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         ) : null
                     ))}
                 </div>
