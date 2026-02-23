@@ -1,0 +1,53 @@
+# RankedByUs - Engineering Spec & AI Rules
+
+## 🚨 MANDATORY PRE-FLIGHT CHECKLIST (VERIFICATION PROCESS) 🚨
+
+**CRITICAL RULE:** Before you finish a task, commit code, or push to GitHub, you **MUST** run the following verification pipeline. 
+
+Vercel will fail to deploy if there are TypeScript errors, ESLint warnings configured as errors, or static generation hydration bugs. Do not ever push blindly.
+
+### The Required Process:
+
+1. **Run the Linter** 
+   ```bash
+   npm run lint
+   ```
+   *Action:* Fix any errors (e.g., `setState` in `useEffect`, unused imports, unused variables, `any` typings). Do not proceed if `npm run lint` exits with an error code.
+
+2. **Run the Production Build**
+   ```bash
+   npm run build
+   ```
+   *Action:* Wait for the Next.js Turbopack build to complete. Ensure it successfully compiles static pages `(84/84)` and finishes the TypeScript checks. Fix any hydration errors or static generation failures.
+
+3. **Stage, Commit, and Push**
+   ```bash
+   git add .
+   git commit -m "feat/fix/chore: [Detailed description of what you changed]"
+   git push origin main
+   ```
+
+## 🎨 Architectural & Design Rules
+
+### 1. Technology Stack
+- **Framework:** Next.js 14+ (App Router)
+- **Language:** TypeScript (Strict Mode)
+- **Styling:** Tailwind CSS + `clsx` + `tailwind-merge` (`cn` utility)
+- **Icons:** `lucide-react`
+- **Database:** Supabase (Client, Server, Admin, and Middleware clients)
+
+### 2. Design Philosophy
+- **Wow Factor:** Every page must look premium. We are building a modern, high-tier SaaS aesthetic.
+- **Glassmorphism:** Liberally use `bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl` for modals and floating elements.
+- **Dark Mode First:** Always include `dark:` variants for every single color class. We rely heavily on `slate-900` and `slate-950` for dark backgrounds.
+- **Micro-animations:** Use `animate-in fade-in slide-in-from-bottom-[X]` and generic `transition-all active:scale-95` on buttons.
+
+### 3. Component Hierarchy
+- All reusable components go in `src/components/`.
+- Try to make components Client Components (`'use client';`) only when necessary (e.g., if they use `useState`, `useEffect`, or browser APIs like `localStorage`).
+- Keep pages as Server Components by default to optimize SEO and load times.
+
+### 4. Code Quality
+- No `console.log` statements in production code.
+- Always implement proper error handling in API routes (`/src/app/api/`) and return JSON responses with proper HTTP status codes.
+- Do not use `Math.random()` during Server Component rendering (it causes hydration mismatches). Use deterministic data.
