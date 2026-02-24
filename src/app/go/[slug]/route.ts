@@ -25,7 +25,8 @@ export async function GET(
     }
 
     // Tracking (fire and forget)
-    const targetUrl = item.affiliate_link || item.website_url || '/';
+    const { optimizeLink } = await import('@/lib/affiliate');
+    const targetUrl = item.affiliate_link || optimizeLink(item.website_url) || '/';
 
     // Increment click count and log click
     await Promise.all([

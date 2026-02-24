@@ -16,11 +16,20 @@ export function AdminFinanceStats() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('/api/admin/stats/finance');
+            // Add a timestamp to bypass any potentially stale browser cache
+            const response = await fetch(`/api/admin/stats/finance?t=${Date.now()}`);
+
+            if (response.status === 404) {
+                console.error('Finance API Route not found (404)');
+                return;
+            }
+
             if (response.ok) {
                 const data = await response.json();
                 setStats(data.stats);
                 setTransactions(data.recentTransactions);
+            } else if (response.status === 401) {
+                console.warn('Unauthorized access to finance stats');
             }
         } catch (error) {
             console.error('Failed to fetch finance stats', error);

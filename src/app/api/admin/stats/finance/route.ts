@@ -1,7 +1,17 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get('admin_session');
+
+    if (!adminSession || adminSession.value !== 'authenticated') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const supabase = createAdminClient();
 

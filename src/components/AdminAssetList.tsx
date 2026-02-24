@@ -14,11 +14,13 @@ import {
     Shield,
     Plus,
     ArrowUpRight,
-    Sparkles
+    Sparkles,
+    Link as LinkIcon
 } from 'lucide-react';
 import type { ItemWithDetails, Category } from '@/types/models';
 import { cn, getLogoUrl } from '@/lib/utils';
 import Image from 'next/image';
+import { optimizeLink } from '@/lib/affiliate';
 
 interface AdminAssetListProps {
     initialAssets: ItemWithDetails[];
@@ -224,6 +226,27 @@ export function AdminAssetList({ initialAssets, categories }: AdminAssetListProp
                                     <option>Trial</option>
                                 </select>
                             </div>
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Affiliate / Target Link</label>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setNewAsset({ ...newAsset, affiliate_link: optimizeLink(newAsset.affiliate_link || newAsset.website_url) });
+                                        }}
+                                        className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                                    >
+                                        Auto-Optimize
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={newAsset.affiliate_link || ''}
+                                    onChange={(e) => setNewAsset({ ...newAsset, affiliate_link: e.target.value })}
+                                    className="w-full bg-white dark:bg-slate-900 rounded-xl px-4 py-3 text-sm font-bold border border-slate-200 dark:border-slate-800 focus:ring-2 ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                                    placeholder="https://..."
+                                />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
@@ -352,7 +375,17 @@ export function AdminAssetList({ initialAssets, categories }: AdminAssetListProp
                                     </div>
 
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Affiliate / Target Link</label>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Affiliate / Target Link</label>
+                                            <button
+                                                onClick={() => {
+                                                    setEditForm({ ...editForm, affiliate_link: optimizeLink(editForm.affiliate_link || asset.website_url) });
+                                                }}
+                                                className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                                            >
+                                                Auto-Optimize Link
+                                            </button>
+                                        </div>
                                         <input
                                             type="text"
                                             value={editForm.affiliate_link || ''}
@@ -444,6 +477,16 @@ export function AdminAssetList({ initialAssets, categories }: AdminAssetListProp
                                             <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">
                                                 {asset.categories?.name}
                                             </span>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(`https://rankedbyus.com/go/${asset.slug}`);
+                                                    alert('Tracking link copied to clipboard!');
+                                                }}
+                                                className="text-[9px] font-black text-slate-400 hover:text-blue-500 uppercase tracking-widest flex items-center gap-1 transition-colors"
+                                            >
+                                                <LinkIcon size={10} />
+                                                Copy Tracking Link
+                                            </button>
                                             {asset.is_sponsored && (
                                                 <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1">
                                                     <TrendingUp size={10} />
