@@ -31,6 +31,7 @@ import { TrafficChart } from "@/components/TrafficChart";
 import { AdminReviewList } from "@/components/AdminReviewList";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ToolIcon } from "@/components/ToolIcon";
+import { NewsletterDispatchButton } from "@/components/NewsletterDispatchButton";
 
 
 // Force refresh
@@ -299,6 +300,7 @@ export default async function AdminPage() {
                             </div>
                             <div className="text-4xl font-black text-slate-900 dark:text-white">{totalSubscribers || 0}</div>
                             <div className="mt-1 text-xs font-bold text-slate-500">Elite Leads</div>
+                            <NewsletterDispatchButton />
                         </div>
                         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-6 shadow-sm">
                             <div className="flex items-center gap-3 text-slate-400 mb-3">

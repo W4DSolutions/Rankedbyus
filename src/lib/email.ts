@@ -11,7 +11,7 @@ const IS_DEV = !process.env.RESEND_API_KEY;
 interface EmailOptions {
   to: string;
   subject: string;
-  template: 'item_approved' | 'item_rejected' | 'claim_approved' | 'claim_rejected' | 'submission_received' | 'admin_new_submission';
+  template: 'item_approved' | 'item_rejected' | 'claim_approved' | 'claim_rejected' | 'submission_received' | 'admin_new_submission' | 'weekly_digest';
   data: Record<string, any>;
 }
 
@@ -140,6 +140,42 @@ function generateHtmlTemplate(template: EmailOptions['template'], data: Record<s
         <p style="${baseStyles.p}">Thank you for submitting <strong>${data.itemName}</strong> to RankedByUs.</p>
         <p style="${baseStyles.p}">Unfortunately, our moderation team has decided not to list your tool at this time. This is typically because the product did not meet our quality guidelines, lacked necessary information, or didn't fit our current category structure.</p>
         <p style="${baseStyles.p}">We encourage you to try submitting again once the product has evolved, or if you believe this was a mistake, reply directly to this email.</p>
+      `);
+
+    case 'weekly_digest':
+      const toolsHtml = data.topTools.map((tool: any, index: number) => `
+        <div style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 900; color: #3B82F6; font-size: 14px;">#${index + 1} Trending</span>
+            <span style="font-size: 12px; font-weight: 700; color: #64748b;">${tool.score} Power</span>
+          </div>
+          <h3 style="margin: 0 0 5px 0; font-size: 18px; font-weight: 800; color: #0f172a;">${tool.name}</h3>
+          <p style="margin: 0; font-size: 14px; color: #475569; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${tool.description}</p>
+          <a href="https://rankedbyus.com/tool/${tool.slug}" style="display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 800; color: #3B82F6; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em;">View Analysis →</a>
+        </div>
+      `).join('');
+
+      const articleHtml = data.latestArticle ? `
+        <div style="margin-top: 30px; padding: 25px; background: #0f172a; border-radius: 16px; color: white;">
+          <span style="display: inline-block; background: #3B82F6; color: white; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 12px;">Latest Deep Dive</span>
+          <h2 style="margin: 0 0 10px 0; font-size: 20px; font-weight: 800; color: white;">${data.latestArticle.title}</h2>
+          <p style="margin: 0 0 15px 0; font-size: 14px; color: #94a3b8; line-height: 1.5;">${data.latestArticle.excerpt}</p>
+          <a href="https://rankedbyus.com/article/${data.latestArticle.slug}" style="display: inline-block; background: white; color: #0f172a; padding: 10px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; text-decoration: none; text-transform: uppercase;">Read Article</a>
+        </div>
+      ` : '';
+
+      return layout(`
+        <span style="${baseStyles.infoBadge}">📊 The Weekly Signal</span>
+        <h1 style="${baseStyles.h1}">The Pulse of the AI Registry</h1>
+        <p style="${baseStyles.p}">Here are the elite tools climbing the ranks this week. Stay ahead of the curve.</p>
+        
+        ${toolsHtml}
+        
+        ${articleHtml}
+        
+        <div style="margin-top: 40px; text-align: center;">
+          <a href="https://rankedbyus.com" style="${baseStyles.button}">Go to the Registry</a>
+        </div>
       `);
 
     case 'claim_approved':

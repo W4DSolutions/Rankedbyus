@@ -43,3 +43,8 @@
 - [x] **Claim Review Process**: Allow anonymous users to "claim" their session history by signing up.
 - [x] **Persistent Profile**: Ensure votes/reviews are linked to the authenticated user ID instead of just the session cookie.
 - [x] **User Dashboard**: Expand the profile view to include account settings (email, name).
+
+## Phase 7: AI Intelligence & Growth
+- [x] **AI Content Engine**: Gemini-powered descriptions and technical articles.
+- [ ] **Weekly Signal**: Automated newsletter digest of top tools and articles.
+- [ ] **Affiliate Optimization**: Auto-link generation and tracking.
