@@ -263,22 +263,55 @@ export default async function CategoryPage({
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            {tools.map((tool, index) => (
-                                <div key={tool.id}>
-                                    <ToolCard
-                                        tool={tool}
-                                        rank={index + 1}
-                                        priority={index < 2}
-                                    />
-                                    {/* Ad Slot after Rank #3 */}
-                                    {index === 2 && (
-                                        <div className="mt-6 mb-6">
-                                            <AdSlot variant="display" sponsor={adSponsor} />
-                                        </div>
-                                    )}
+                        <div className="flex flex-col lg:flex-row gap-12">
+                            <div className="flex-1 space-y-6">
+                                {tools.map((tool, index) => (
+                                    <div key={tool.id}>
+                                        <ToolCard
+                                            tool={tool}
+                                            rank={index + 1}
+                                            priority={index < 2}
+                                        />
+                                        {/* Ad Slot after Rank #3 */}
+                                        {index === 2 && (
+                                            <div className="mt-6 mb-6">
+                                                <AdSlot variant="display" sponsor={adSponsor} />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Programmatic Sidebar Collections - Phase 8 Enhancement */}
+                            <aside className="lg:w-80 space-y-10">
+                                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-8">
+                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6">Strategic Collections</h3>
+                                    <div className="space-y-4">
+                                        <Link
+                                            href={`/best/free-${slug}`}
+                                            className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 hover:bg-blue-600 hover:text-white transition-all border border-transparent hover:border-blue-500/20"
+                                        >
+                                            <span className="text-xs font-black uppercase tracking-tight">Best Free {category.name}</span>
+                                            <Rocket size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                        </Link>
+
+                                        {allTags.slice(0, 5).map(t => (
+                                            <Link
+                                                key={t.id}
+                                                href={`/best/${slug}-for-${t.slug}`}
+                                                className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/30 hover:bg-slate-900 dark:hover:bg-blue-600 hover:text-white transition-all"
+                                            >
+                                                <span className="text-xs font-black uppercase tracking-tight">{category.name} for {t.name}</span>
+                                                <div className="h-6 w-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-white/20 group-hover:text-white transition-colors">
+                                                    <Search size={12} />
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
+
+                                <AdSlot variant="sidebar" className="mt-8" />
+                            </aside>
                         </div>
                     )}
                 </div>

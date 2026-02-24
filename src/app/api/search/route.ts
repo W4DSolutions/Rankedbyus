@@ -5,12 +5,31 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const query = searchParams.get('q');
-
-        if (!query || query.length < 2) {
-            return NextResponse.json({ results: [] });
-        }
+        const limitStr = searchParams.get('limit');
+        const limit = limitStr ? parseInt(limitStr, 10) : 10;
 
         const supabase = await createClient();
+
+        if (!query || query.length < 2) {
+            // If no query but limit requested, return top tools (Pre-fetch/Popular)
+            if (limitStr) {
+                const { data: popular } = await supabase
+                    .from('items')
+                    .select(`
+                        *,
+                        categories:category_id (name, slug),
+                        item_tags (
+                            tags (*)
+                        )
+                    `)
+                    .eq('status', 'approved')
+                    .limit(limit)
+                    .order('score', { ascending: false });
+
+                return NextResponse.json({ results: popular || [] });
+            }
+            return NextResponse.json({ results: [] });
+        }
 
         // Search in items (name and description)
         // We use ilike for simple case-insensitive search

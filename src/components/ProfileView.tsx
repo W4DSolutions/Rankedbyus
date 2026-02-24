@@ -22,6 +22,31 @@ interface ProfileViewProps {
 export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvotedTools, reviews, submissions }: ProfileViewProps) {
     const [activeTab, setActiveTab] = useState<'upvoted' | 'reviews' | 'submissions'>('upvoted');
     const [editingTool, setEditingTool] = useState<ItemWithDetails | null>(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [newDisplayName, setNewDisplayName] = useState(displayName);
+    const [currentDisplayName, setCurrentDisplayName] = useState(displayName);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const handleUpdateProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsUpdating(true);
+        try {
+            const response = await fetch('/api/user/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ displayName: newDisplayName }),
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCurrentDisplayName(data.displayName);
+                setIsEditingProfile(false);
+            }
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     return (
         <div className="grid lg:grid-cols-12 gap-12">
@@ -31,7 +56,50 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                     <div className="mx-auto h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white mb-6 shadow-lg shadow-blue-500/20">
                         <User size={40} />
                     </div>
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">{displayName}</h2>
+
+                    {isEditingProfile ? (
+                        <form onSubmit={handleUpdateProfile} className="mb-4">
+                            <input
+                                type="text"
+                                value={newDisplayName}
+                                onChange={(e) => setNewDisplayName(e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-2 text-center text-sm font-black text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none mb-2"
+                                placeholder="Display Name"
+                                autoFocus
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditingProfile(false)}
+                                    className="flex-1 rounded-lg bg-slate-100 dark:bg-slate-800 py-2 text-[10px] font-black uppercase text-slate-500"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isUpdating}
+                                    className="flex-1 rounded-lg bg-blue-600 py-2 text-[10px] font-black uppercase text-white shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                                >
+                                    {isUpdating ? 'Wait...' : 'Save'}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="group/name relative inline-block w-full">
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2 flex items-center justify-center gap-2">
+                                {currentDisplayName}
+                                {!isAnonymous && (
+                                    <button
+                                        onClick={() => setIsEditingProfile(true)}
+                                        className="opacity-0 group-hover/name:opacity-100 p-1 text-slate-400 hover:text-blue-500 transition-all"
+                                    >
+                                        <PencilLine size={14} />
+                                    </button>
+                                )}
+                            </h2>
+                        </div>
+                    )}
+
                     <p className="text-xs font-mono text-slate-400 mb-6 truncate px-4 bg-slate-50 dark:bg-slate-950 py-1 rounded">
                         {displayIdentifier}
                     </p>

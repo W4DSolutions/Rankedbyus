@@ -10,6 +10,7 @@ import { ToolIcon } from '@/components/ToolIcon';
 function SearchBarContent() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<ItemWithDetails[]>([]);
+    const [popularTools, setPopularTools] = useState<ItemWithDetails[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,19 @@ function SearchBarContent() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    useEffect(() => {
+        const fetchPopular = async () => {
+            try {
+                const response = await fetch('/api/search?limit=5'); // Fetch top 5 if no Q
+                const data = await response.json();
+                if (data.results) setPopularTools(data.results);
+            } catch (err) {
+                console.error("Pre-fetch error:", err);
+            }
+        };
+        fetchPopular();
     }, []);
 
     useEffect(() => {
@@ -115,7 +129,7 @@ function SearchBarContent() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => query.length >= 2 && setShowDropdown(true)}
+                    onFocus={() => setShowDropdown(true)}
                     placeholder="Search for AI writing tools, generators..."
                     className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 px-6 py-4 pl-12 text-slate-900 dark:text-white placeholder-slate-400 backdrop-blur-xl focus:border-blue-500/50 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-xl shadow-blue-500/5 font-medium group-hover:border-slate-300 dark:group-hover:border-slate-700"
                 />
@@ -134,10 +148,15 @@ function SearchBarContent() {
                 </div>
             </form>
 
-            {showDropdown && results.length > 0 && (
+            {showDropdown && (results.length > 0 || (query.length === 0 && popularTools.length > 0)) && (
                 <div className="absolute top-full left-0 right-0 mt-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900 shadow-2xl overflow-hidden z-50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                        {results.map((result) => (
+                        {query.length === 0 && (
+                            <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                                <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Elite Suggestions</span>
+                            </div>
+                        )}
+                        {(query.length > 0 ? results : popularTools).map((result) => (
                             <Link
                                 key={result.id}
                                 href={`/tool/${result.slug}`}

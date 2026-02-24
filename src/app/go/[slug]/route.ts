@@ -29,15 +29,21 @@ export async function GET(
     const targetUrl = item.affiliate_link || optimizeLink(item.website_url) || '/';
 
     // Increment click count and log click with enhanced telemetry
+    const timeOnPage = request.nextUrl.searchParams.get('top');
+    const { data: { user } } = await supabase.auth.getUser();
+
     await Promise.all([
         supabase.rpc('increment_click_count', { item_row_id: item.id }),
         supabase.from('clicks').insert({
             item_id: item.id,
             session_id: sessionId,
+            user_id: user?.id || null,
             referrer: request.headers.get('referer') || 'direct',
             user_agent: request.headers.get('user-agent'),
             path: request.nextUrl.pathname,
-            utm_source: request.nextUrl.searchParams.get('utm_source') || 'RankedByUs'
+            utm_source: request.nextUrl.searchParams.get('utm_source') || 'RankedByUs',
+            time_on_page: timeOnPage ? parseInt(timeOnPage, 10) : null,
+            is_authenticated: !!user
         })
     ]);
 

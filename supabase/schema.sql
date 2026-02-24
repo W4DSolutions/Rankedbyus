@@ -54,8 +54,12 @@ alter table public.votes enable row level security;
 -- Policies
 create policy "Public categories are viewable by everyone" on public.categories for select using (true);
 create policy "Public and approved items are viewable by everyone" on public.items for select using (status = 'approved'); 
+create policy "Users can view their own submissions" on public.items for select using (user_id = auth.uid());
 create policy "Public can submit items" on public.items for insert with check (true);
 create policy "Anyone can vote" on public.votes for insert with check (true);
+create policy "Users can view their own votes" on public.votes for select using (auth.uid() = user_id or (session_id is not null));
+create policy "Users can update their own votes" on public.votes for update using (auth.uid() = user_id);
+create policy "Users can delete their own votes" on public.votes for delete using (auth.uid() = user_id);
 
 -- Tags Table
 create table public.tags (
@@ -118,11 +122,8 @@ are
 viewable
 by
 everyone\ on public.reviews for select using (status = 'approved');
-create policy \Anyone
-can
-submit
-a
-review\ on public.reviews for insert with check (true);
+create policy "Anyone can submit a review" on public.reviews for insert with check (true);
+create policy "Users can view their own reviews" on public.reviews for select using (auth.uid() = user_id or (session_id is not null));
 
 
 -- Adding rating stats to items
@@ -163,4 +164,83 @@ create table public.vote_audit_logs (
 
 -- RLS for Audit Logs
 alter table public.vote_audit_logs enable row level security;
+
+-- Clicks / Analytics Table (Phase 8 Enhancement)
+create table public.clicks (
+  id uuid not null default gen_random_uuid() primary key,
+  item_id uuid references public.items(id) on delete cascade,
+  session_id text,
+  user_id uuid references auth.users(id),
+  referrer text,
+  user_agent text,
+  ip_address text,
+  path text,
+  utm_source text,
+  time_on_page integer, -- Tracks engagement before click
+  is_authenticated boolean default false,
+  created_at timestamptz not null default now()
+);
+
+-- RLS for Clicks
+alter table public.clicks enable row level security;
+create policy "Anyone can insert clicks" on public.clicks for insert with check (true);
+create policy "Admins can view clicks" on public.clicks for select using (true);
+
+-- Automation: Sync Item Stats on Review Approval
+create or replace function public.sync_item_review_stats()
+returns trigger as $$
+begin
+  if (TG_OP = 'INSERT' and new.status = 'approved') or 
+     (TG_OP = 'UPDATE' and new.status = 'approved' and (old.status != 'approved' or old.rating != new.rating)) or
+     (TG_OP = 'DELETE' and old.status = 'approved') then
+     
+    update public.items
+    set 
+      review_count = (select count(*) from public.reviews where item_id = coalesce(new.item_id, old.item_id) and status = 'approved'),
+      average_rating = coalesce((select avg(rating)::float from public.reviews where item_id = coalesce(new.item_id, old.item_id) and status = 'approved'), 0)
+    where id = coalesce(new.item_id, old.item_id);
+  end if;
+  return null;
+end;
+$$ language plpgsql;
+
+create trigger tr_sync_review_stats
+after insert or update or delete on public.reviews
+for each row execute function public.sync_item_review_stats();
+
+-- Automation: Sync Item Score on Vote
+create or replace function public.sync_item_vote_stats()
+returns trigger as $$
+declare
+  v_upvotes int;
+  v_downvotes int;
+  v_recent_upvotes int;
+begin
+  -- Get aggregates
+  select count(*) filter (where value = 1), count(*) filter (where value = -1)
+  into v_upvotes, v_downvotes
+  from public.votes 
+  where item_id = coalesce(new.item_id, old.item_id);
+
+  select count(*) 
+  into v_recent_upvotes
+  from public.votes 
+  where item_id = coalesce(new.item_id, old.item_id) 
+    and value = 1 
+    and created_at > (now() - interval '7 days');
+
+  -- Update Item
+  update public.items
+  set 
+    vote_count = v_upvotes + v_downvotes,
+    score = (v_upvotes - v_downvotes) + (v_recent_upvotes * 2)
+  where id = coalesce(new.item_id, old.item_id);
+
+  return null;
+end;
+$$ language plpgsql;
+
+create trigger tr_sync_vote_stats
+after insert or update or delete on public.votes
+for each row execute function public.sync_item_vote_stats();
 

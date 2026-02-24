@@ -231,6 +231,7 @@ export default async function ToolDetailPage({
                                 </p>
                                 <div className="flex flex-wrap justify-center md:justify-start items-center gap-6">
                                     <a
+                                        id="visit-trigger"
                                         href={`/go/${tool.slug}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -469,6 +470,56 @@ export default async function ToolDetailPage({
                         </div>
                     </aside>
                 </div>
+
+                {/* Interactive FAQ Section - Phase 8 Enhancement */}
+                <div className="mt-32 border-t border-slate-100 dark:border-slate-800 pt-20">
+                    <div className="flex items-center gap-3 mb-12">
+                        <Sparkles className="text-blue-600" size={24} />
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Technical FAQ</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[
+                            {
+                                q: `Is ${tool.name} free to use?`,
+                                a: tool.pricing_model === 'Free'
+                                    ? `Yes, ${tool.name} is classified as a free tool in our registry.`
+                                    : `${tool.name} typically operates on a ${tool.pricing_model || 'Premium'} model. Check the official interface for the most current pricing blocks.`
+                            },
+                            {
+                                q: `How is the ${tool.name} Alpha Score calculated?`,
+                                a: `Our proprietary algorithm combines raw vote delta with recent deployment velocity. ${tool.name} currently holds a score of ${tool.score}, reflecting its community standing.`
+                            },
+                            {
+                                q: `What are the top alternatives to ${tool.name}?`,
+                                a: `Based on community signals in the ${tool.categories?.name} niche, top rivals include ${(relatedTools as ItemWithDetails[])?.map(t => t.name).join(', ') || 'other elite tools in this category'}.`
+                            }
+                        ].map((faq, idx) => (
+                            <div key={idx} className="p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 shadow-sm hover:shadow-md transition-shadow">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
+                                    {faq.q}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed italic">
+                                    {faq.a}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <script dangerouslySetInnerHTML={{
+                    __html: `
+                    (function() {
+                        const startTime = Date.now();
+                        const link = document.getElementById('visit-trigger');
+                        if (link) {
+                            link.addEventListener('click', function(e) {
+                                const duration = Math.floor((Date.now() - startTime) / 1000);
+                                const originalHref = link.getAttribute('href');
+                                link.setAttribute('href', originalHref + (originalHref.includes('?') ? '&' : '?') + 'top=' + duration);
+                            });
+                        }
+                    })();
+                `}} />
             </main>
 
             {/* Structured Data for SEO */}
@@ -487,7 +538,50 @@ export default async function ToolDetailPage({
                             "ratingCount": tool.review_count || 1,
                             "bestRating": "5",
                             "worstRating": "1"
-                        }
+                        },
+                        "review": (reviews as Review[] || []).map(r => ({
+                            "@type": "Review",
+                            "reviewRating": {
+                                "@type": "Rating",
+                                "ratingValue": r.rating,
+                                "bestRating": "5",
+                                "worstRating": "1"
+                            },
+                            "author": {
+                                "@type": "Person",
+                                "name": "Verified Auditor"
+                            },
+                            "reviewBody": r.comment
+                        }))
+                    })
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "FAQPage",
+                        "mainEntity": [
+                            {
+                                "@type": "Question",
+                                "name": `Is ${tool.name} free to use?`,
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": tool.pricing_model === 'Free'
+                                        ? `Yes, ${tool.name} is classified as a free tool in our registry.`
+                                        : `${tool.name} typically operates on a ${tool.pricing_model || 'Premium'} model.`
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": `How is the ${tool.name} Alpha Score calculated?`,
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": `Our proprietary algorithm combines raw vote delta with recent deployment velocity. ${tool.name} currently holds a score of ${tool.score}.`
+                                }
+                            }
+                        ]
                     })
                 }}
             />

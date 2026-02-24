@@ -28,7 +28,18 @@ export async function updateSession(request: NextRequest) {
     )
 
     // refreshing the auth token and checking user
-    const { data: { user } } = await supabase.auth.getUser()
+    // We wrap this in a try-catch because getUser can throw AuthApiError if the refresh token is invalid
+    let user = null;
+    try {
+        const { data: { user: authUser }, error } = await supabase.auth.getUser()
+        if (!error) {
+            user = authUser;
+        } else if (error.status === 400 && error.message.includes('Refresh Token Not Found')) {
+            console.warn('Middleware: Invalid refresh token detected. User will be treated as guest.');
+        }
+    } catch (e) {
+        console.error('Middleware Auth Error:', e);
+    }
 
     // Protected Routes Check
     const protectedRoutes = ['/profile', '/submit-tool']

@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     description: 'View your activity, votes, and reviews on RankedByUs.',
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 
 export default async function ProfilePage() {
     const supabase = await createClient();
