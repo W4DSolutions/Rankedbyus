@@ -44,7 +44,14 @@
 - [x] **Persistent Profile**: Ensure votes/reviews are linked to the authenticated user ID instead of just the session cookie.
 - [x] **User Dashboard**: Expand the profile view to include account settings (email, name).
 
-## Phase 7: AI Intelligence & Growth
+## Phase 7: AI Intelligence & Growth (Completed)
 - [x] **AI Content Engine**: Gemini-powered descriptions and technical articles.
-- [ ] **Weekly Signal**: Automated newsletter digest of top tools and articles.
-- [ ] **Affiliate Optimization**: Auto-link generation and tracking.
+- [x] **Weekly Signal**: Automated newsletter digest of top tools and articles.
+- [x] **Affiliate Optimization**: Auto-link generation and tracking.
+
+## Phase 8: Scaling & SEO Domination
+- [ ] **Programmatic Category Lists**: "Best of 2026" listicle structures for category pages.
+- [ ] **Rich Schema Expansion**: Individualized Review and FAQ structured data per tool.
+- [ ] **Registry Performance**: Debounced Instant Search with result pre-fetching.
+- [ ] **Advanced Analytics**: Heatmaps and conversion tracking for affiliate clicks.
+- [ ] **Multi-Niche Expansion**: Tools for programmatic category generation for new niches.

@@ -187,18 +187,21 @@ export default async function CategoryPage({
             </header>
 
             {/* Category Hero */}
-            <section className="relative py-24 overflow-hidden border-b border-slate-200 dark:border-slate-800">
+            <section className="relative py-20 overflow-hidden border-b border-slate-200 dark:border-slate-800">
                 <div className="absolute inset-0 bg-blue-600/5 dark:bg-blue-600/10" />
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-                    <Link href="/#categories" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 mb-8 transition-colors group">
-                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                        Back to Registry
-                    </Link>
 
-                    <div className="flex flex-col md:flex-row md:items-center gap-8">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400">
+                    {/* 8.2 Breadcrumbs Component */}
+                    <nav className="flex items-center gap-2 mb-8 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                        <Link href="/" className="hover:text-blue-600 transition-colors">Registry</Link>
+                        <span>/</span>
+                        <span className="text-slate-900 dark:text-white">{category.name}</span>
+                    </nav>
+
+                    <div className="flex flex-col md:flex-row md:items-start gap-12">
+                        <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-[2.5rem] bg-white dark:bg-slate-900 shadow-2xl border-2 border-slate-100 dark:border-slate-800 text-blue-600 dark:text-blue-400 group-hover:rotate-6 transition-transform">
                             {(() => {
-                                const size = 36;
+                                const size = 42;
                                 const strokeWidth = 1.5;
                                 if (category.slug === 'ai-writing-tools') return <PenTool size={size} strokeWidth={strokeWidth} />;
                                 if (category.slug === 'ai-image-generators') return <Palette size={size} strokeWidth={strokeWidth} />;

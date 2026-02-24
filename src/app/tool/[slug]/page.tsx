@@ -161,7 +161,18 @@ export default async function ToolDetailPage({
             </header>
 
             <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-                <div className="mb-12">
+                <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    {/* 8.2 Breadcrumbs Component */}
+                    <nav className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                        <Link href="/" className="hover:text-blue-600 transition-colors">Registry</Link>
+                        <span>/</span>
+                        {tool.categories && (
+                            <Link href={`/category/${tool.categories.slug}`} className="hover:text-blue-600 transition-colors">{tool.categories.name}</Link>
+                        )}
+                        <span>/</span>
+                        <span className="text-slate-900 dark:text-white">{tool.name}</span>
+                    </nav>
+
                     {tool.categories ? (
                         <Link href={`/category/${tool.categories.slug}`} className="inline-flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 uppercase tracking-[0.2em] transition-all group">
                             <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />

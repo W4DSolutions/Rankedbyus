@@ -46,7 +46,19 @@ function SearchBarContent() {
             if (query.length < 2) {
                 setResults([]);
                 setShowDropdown(false);
+
+                // If on search page and cleared, reset results
+                if (pathname === '/search' && query === '') {
+                    router.push('/search', { scroll: false });
+                }
                 return;
+            }
+
+            // 8.3 Registry Performance: Live update if on search page
+            if (pathname === '/search') {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('q', query);
+                router.replace(`/search?${params.toString()}`, { scroll: false });
             }
 
             setIsSearching(true);
@@ -55,7 +67,10 @@ function SearchBarContent() {
                 const data = await response.json();
                 if (data.results) {
                     setResults(data.results);
-                    setShowDropdown(true);
+                    // Only show dropdown if NOT on search page (avoid double results)
+                    if (pathname !== '/search') {
+                        setShowDropdown(true);
+                    }
                 }
             } catch (error) {
                 console.error('Search error:', error);
@@ -66,7 +81,7 @@ function SearchBarContent() {
 
         const timeoutId = setTimeout(fetchResults, 300);
         return () => clearTimeout(timeoutId);
-    }, [query]);
+    }, [query, pathname, router, searchParams]);
 
     // Pre-fill query from URL if we are on the search page
     useEffect(() => {

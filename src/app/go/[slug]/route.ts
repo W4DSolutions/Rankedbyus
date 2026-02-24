@@ -28,13 +28,16 @@ export async function GET(
     const { optimizeLink } = await import('@/lib/affiliate');
     const targetUrl = item.affiliate_link || optimizeLink(item.website_url) || '/';
 
-    // Increment click count and log click
+    // Increment click count and log click with enhanced telemetry
     await Promise.all([
         supabase.rpc('increment_click_count', { item_row_id: item.id }),
         supabase.from('clicks').insert({
             item_id: item.id,
             session_id: sessionId,
-            referrer: request.headers.get('referer') || 'direct'
+            referrer: request.headers.get('referer') || 'direct',
+            user_agent: request.headers.get('user-agent'),
+            path: request.nextUrl.pathname,
+            utm_source: request.nextUrl.searchParams.get('utm_source') || 'RankedByUs'
         })
     ]);
 
