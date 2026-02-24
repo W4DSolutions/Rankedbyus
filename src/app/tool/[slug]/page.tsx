@@ -230,7 +230,7 @@ export default async function ToolDetailPage({
                                     {tool.description}
                                 </p>
                                 <div className="flex flex-wrap justify-center md:justify-start items-center gap-6">
-                                    <Link
+                                    <a
                                         href={`/go/${tool.slug}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -238,7 +238,7 @@ export default async function ToolDetailPage({
                                     >
                                         Visit Official Interface
                                         <ExternalLink size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                    </Link>
+                                    </a>
 
                                     <div className="flex items-center gap-8 px-8 py-5 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-sm">
                                         <div className="flex flex-col">

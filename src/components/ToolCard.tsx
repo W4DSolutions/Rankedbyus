@@ -192,7 +192,7 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
 
                 {/* CTA */}
                 <div className="flex flex-col gap-3 min-w-[200px] w-full md:w-auto pt-4">
-                    <Link
+                    <a
                         href={`/go/${tool.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -201,7 +201,7 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
                     >
                         Deploy Interface
                         <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                    </Link>
+                    </a>
 
                 </div>
             </div>

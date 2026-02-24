@@ -180,9 +180,9 @@ export default async function BestPage({
                                         </span>
                                     </div>
                                     <div className="p-6">
-                                        <Link href={`/go/${tool.slug}`} className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-500 transition-colors flex items-center gap-2">
+                                        <a href={`/go/${tool.slug}`} className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-500 transition-colors flex items-center gap-2">
                                             Deploy <Rocket size={12} />
-                                        </Link>
+                                        </a>
                                     </div>
                                 </div>
                             ))}
