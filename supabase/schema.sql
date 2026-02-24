@@ -32,7 +32,10 @@ create table public.items (
 create table public.votes (
   id uuid not null default gen_random_uuid() primary key,
   item_id uuid not null references public.items(id) on delete cascade,
-  session_id text not null, -- Stores fingerprint or anonymous ID
+  session_id text,
+  user_id uuid references auth.users(id),
+  ip_address text,
+  user_agent text,
   value int not null default 1 check (value in (1, -1)),
   created_at timestamptz not null default now()
 );
@@ -95,12 +98,15 @@ everyone\ on public.item_tags for select using (true);
 create table public.reviews (
   id uuid not null default gen_random_uuid() primary key,
   item_id uuid not null references public.items(id) on delete cascade,
-  session_id text not null,
+  session_id text,
+  user_id uuid references auth.users(id),
   rating int not null check (rating >= 1 and rating <= 5),
-  comment text, -- Optional text review
-  status item_status not null default 'pending', -- Reviews might need moderation too
+  comment text, 
+  status item_status not null default 'pending',
+  helpful_count int not null default 0,
   created_at timestamptz not null default now(),
-  unique(item_id, session_id) -- One review per tool per person
+  unique(item_id, session_id),
+  unique(item_id, user_id)
 );
 
 -- RLS for Reviews
@@ -123,4 +129,38 @@ review\ on public.reviews for insert with check (true);
 alter table public.items 
 add column average_rating float not null default 0,
 add column review_count int not null default 0;
+
+-- Function to increment click count
+create or replace function increment_click_count(item_row_id uuid)
+returns void as $$
+begin
+  update public.items
+  set click_count = click_count + 1
+  where id = item_row_id;
+end;
+$$ language plpgsql security modeller;
+
+-- Function to increment review helpful count
+create or replace function increment_review_helpful(review_row_id uuid)
+returns void as $$
+begin
+  update public.reviews
+  set helpful_count = helpful_count + 1
+  where id = review_row_id;
+end;
+
+-- Vote Audit Logs (for security)
+create table public.vote_audit_logs (
+  id uuid not null default gen_random_uuid() primary key,
+  ip_address text,
+  user_agent text,
+  session_id text,
+  item_id uuid,
+  action text not null, -- 'vote_cast', 'rate_limited', etc.
+  message text,
+  created_at timestamptz not null default now()
+);
+
+-- RLS for Audit Logs
+alter table public.vote_audit_logs enable row level security;
 

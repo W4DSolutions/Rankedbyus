@@ -87,9 +87,11 @@ export async function POST(request: NextRequest) {
                 .update({
                     value,
                     session_id: sessionId, // Normalize to current session
-                    ip_address: ipAddress   // Update with current IP
+                    ip_address: ipAddress,  // Update with current IP
+                    user_id: user?.id || existingVote.user_id // Link to user if they just logged in
                 })
                 .eq('id', existingVote.id);
+        } else {
             // Insert new vote
             await supabase
                 .from('votes')

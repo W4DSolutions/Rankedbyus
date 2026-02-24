@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { formatScore } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,22 @@ export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
     const [score, setScore] = useState(initialScore);
     const [userVote, setUserVote] = useState<1 | -1 | null>(null);
     const [isVoting, setIsVoting] = useState(false);
+
+    useEffect(() => {
+        const fetchUserVote = async () => {
+            try {
+                const response = await fetch(`/api/vote?item_id=${itemId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserVote(data.user_vote);
+                }
+            } catch (error) {
+                console.error('Error fetching user vote:', error);
+            }
+        };
+
+        fetchUserVote();
+    }, [itemId]);
 
     const handleVote = async (value: 1 | -1) => {
         if (isVoting) return;

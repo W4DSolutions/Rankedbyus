@@ -158,9 +158,23 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
                             </div>
                         )}
                         <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.preventDefault();
-                                navigator.clipboard.writeText(`${window.location.origin}/tool/${tool.slug}`);
+                                const url = `${window.location.origin}/tool/${tool.slug}`;
+                                if (navigator.share) {
+                                    try {
+                                        await navigator.share({
+                                            title: `${tool.name} | RankedByUs`,
+                                            text: `Check out ${tool.name} on RankedByUs - Community Intelligence Registry.`,
+                                            url: url
+                                        });
+                                    } catch (err) {
+                                        // User cancelled or error
+                                    }
+                                } else {
+                                    navigator.clipboard.writeText(url);
+                                    alert('Registry link copied to clipboard!');
+                                }
                             }}
                             className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-500 transition-colors flex items-center gap-2"
                         >
