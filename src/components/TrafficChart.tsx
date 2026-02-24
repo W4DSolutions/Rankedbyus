@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { formatDate } from '@/lib/utils';
+
 
 interface TrafficData {
     date: string;

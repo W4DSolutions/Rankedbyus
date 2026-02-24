@@ -11,7 +11,7 @@ const IS_DEV = !process.env.RESEND_API_KEY;
 interface EmailOptions {
   to: string;
   subject: string;
-  template: 'item_approved' | 'item_rejected' | 'claim_approved' | 'claim_rejected';
+  template: 'item_approved' | 'item_rejected' | 'claim_approved' | 'claim_rejected' | 'submission_received' | 'admin_new_submission';
   data: Record<string, any>;
 }
 
@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, template, data }: EmailOptions) {
   try {
     const { data: responseData, error } = await resend.emails.send({
       from: 'RankedByUs <hello@rankedbyus.com>',
-      to: [to],
+      to: typeof to === 'string' ? [to] : to,
       subject: subject,
       html: htmlContent,
     });
@@ -69,6 +69,7 @@ function generateHtmlTemplate(template: EmailOptions['template'], data: Record<s
     footer: 'background-color: #f1f5f9; padding: 24px 30px; text-align: center; font-size: 14px; color: #64748b;',
     successBadge: 'display: inline-block; background-color: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 99px; font-weight: 700; font-size: 13px; margin-bottom: 16px;',
     errorBadge: 'display: inline-block; background-color: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 99px; font-weight: 700; font-size: 13px; margin-bottom: 16px;',
+    infoBadge: 'display: inline-block; background-color: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 99px; font-weight: 700; font-size: 13px; margin-bottom: 16px;',
   };
 
   const layout = (bodyHtml: string) => `
@@ -102,11 +103,31 @@ function generateHtmlTemplate(template: EmailOptions['template'], data: Record<s
   `;
 
   switch (template) {
+    case 'submission_received':
+      return layout(`
+        <span style="${baseStyles.infoBadge}">✓ Submission Received</span>
+        <h1 style="${baseStyles.h1}">We've received your tool!</h1>
+        <p style="${baseStyles.p}">Thank you for submitting <strong>${data.itemName}</strong> to RankedByUs.</p>
+        <p style="${baseStyles.p}">Our team will now review your submission to ensure it meets our quality standards. This usually takes 24-48 hours.</p>
+        <p style="${baseStyles.p}">Once approved, your tool will be live and ready for community voting!</p>
+        <p style="${baseStyles.p}">We'll notify you via email as soon as the status changes.</p>
+      `);
+
+    case 'admin_new_submission':
+      return layout(`
+        <span style="${baseStyles.infoBadge}">📢 New Paid Submission</span>
+        <h1 style="${baseStyles.h1}">New tool requires moderation</h1>
+        <p style="${baseStyles.p}">A new tool has been submitted and paid for: <strong>${data.itemName}</strong></p>
+        <p style="${baseStyles.p}"><strong>Category:</strong> ${data.category}</p>
+        <p style="${baseStyles.p}"><strong>Submitter:</strong> ${data.submitterEmail}</p>
+        <a href="https://rankedbyus.com/admin" style="${baseStyles.button}">Go to Admin Dashboard</a>
+      `);
+
     case 'item_approved':
       return layout(`
         <span style="${baseStyles.successBadge}">✓ Tool Approved</span>
         <h1 style="${baseStyles.h1}">Your tool is now live on RankedByUs!</h1>
-        <p style="${baseStyles.p}">Great news! <strong>${data.itemName || 'Your submission'}</strong> has successfully passed our moderation review and is now live on the platform.</p>
+        <p style="${baseStyles.p}">Great news! <strong>${data.itemName}</strong> has successfully passed our moderation review and is now live on the platform.</p>
         <p style="${baseStyles.p}">Founders trust us to rank the absolute best tools on the internet. We are thrilled to have your product in the registry.</p>
         <a href="https://rankedbyus.com/tool/${data.itemSlug || ''}" style="${baseStyles.button}">View Your Listing</a>
         <p style="${baseStyles.p}">Tip: Share your direct link with your audience to start climbing the ranks instantly!</p>
@@ -116,7 +137,7 @@ function generateHtmlTemplate(template: EmailOptions['template'], data: Record<s
       return layout(`
         <span style="${baseStyles.errorBadge}">✕ Submission Rejected</span>
         <h1 style="${baseStyles.h1}">Update on your submission</h1>
-        <p style="${baseStyles.p}">Thank you for submitting <strong>${data.itemName || 'your product'}</strong> to RankedByUs.</p>
+        <p style="${baseStyles.p}">Thank you for submitting <strong>${data.itemName}</strong> to RankedByUs.</p>
         <p style="${baseStyles.p}">Unfortunately, our moderation team has decided not to list your tool at this time. This is typically because the product did not meet our quality guidelines, lacked necessary information, or didn't fit our current category structure.</p>
         <p style="${baseStyles.p}">We encourage you to try submitting again once the product has evolved, or if you believe this was a mistake, reply directly to this email.</p>
       `);

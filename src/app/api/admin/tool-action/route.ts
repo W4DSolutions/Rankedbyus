@@ -67,14 +67,14 @@ export async function POST(request: NextRequest) {
                     to: item.submitter_email,
                     subject: `Asset Approved: ${item.name} is now live!`,
                     template: 'item_approved',
-                    data: { name: item.name }
+                    data: { itemName: item.name }
                 });
             } else if (status === 'rejected') {
                 await sendEmail({
                     to: item.submitter_email,
                     subject: `Status Update: Submissions regarding ${item.name}`,
                     template: 'item_rejected',
-                    data: { name: item.name }
+                    data: { itemName: item.name }
                 });
             }
         }

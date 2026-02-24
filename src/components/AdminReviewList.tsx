@@ -3,10 +3,8 @@
 
 import { useState } from 'react';
 import {
-    MessageSquare,
     CheckCircle2,
     Star,
-    X,
     Check,
     Loader2,
     Square,

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Users, Crown, Calendar, Hash, ArrowUpDown } from 'lucide-react';
+import { Loader2, Users, Crown } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 
 export function AdminUserList() {
     const [users, setUsers] = useState<any[]>([]);

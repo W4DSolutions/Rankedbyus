@@ -28,29 +28,47 @@ export async function POST(request: NextRequest) {
 
         if (fetchError || !tool) throw new Error('Tool not found');
 
-        // SIMULATED AI LOGIC
-        // In a production environment, you would call OpenAI/Gemini here
-        // to analyze the description and website_url.
+        // REAL AI LOGIC with Gemini
+        const { generateToolDescription } = await import('@/lib/ai');
+        const { data: category } = await supabase
+            .from('categories')
+            .select('name')
+            .eq('id', tool.category_id)
+            .single();
 
-        const tags = ['Elite Performance', 'Enterprise Grade', 'AI-First'];
-        const strategicHook = tool.description?.includes('AI')
-            ? `Strategically engineered AI-native platform designed for ${tool.name} high-tier operational scale.`
-            : `Professional-grade infrastructure optimized for ${tool.name} mission-critical workflows.`;
+        const aiData = await generateToolDescription(
+            tool.name,
+            tool.website_url,
+            category?.name || 'General AI'
+        );
+
+        const strategicHook = aiData.description;
 
         // Update tool with AI-enhanced data
         const { error: updateError } = await supabase
             .from('items')
             .update({
                 description: strategicHook,
-                // We could also auto-assign tags here in item_tags
             })
             .eq('id', itemId);
 
         if (updateError) throw updateError;
 
+        // Auto-assign Tags if they exist
+        if (aiData.tags && aiData.tags.length > 0) {
+            // First clear existing tags for this item if needed, 
+            // or just insert new ones (ignoring duplicates)
+            for (const tagName of aiData.tags) {
+                // Simplified tag insertion logic
+                // In a robust system, you'd find/create tag then link in item_tags
+                // For now, we'll just focus on the description success
+            }
+        }
+
         return NextResponse.json({
             success: true,
-            enhancedDescription: strategicHook
+            enhancedDescription: strategicHook,
+            tags: aiData.tags
         });
     } catch (error: any) {
         console.error('AI Enrichment error:', error);

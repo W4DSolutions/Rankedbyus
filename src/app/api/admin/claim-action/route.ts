@@ -24,11 +24,12 @@ export async function POST(request: NextRequest) {
             // Get item_id and email
             const { data: claim, error: fetchError } = await supabase
                 .from('claim_requests')
-                .select('item_id, email')
+                .select('item_id, email, items(name)')
                 .eq('id', claimId)
                 .single();
 
             if (fetchError || !claim) throw new Error('Claim not found');
+            const itemName = (claim.items as any)?.name || 'your tool';
 
             const { error: updateError } = await supabase
                 .from('claim_requests')
@@ -48,14 +49,14 @@ export async function POST(request: NextRequest) {
             // Notify Founder
             await sendEmail({
                 to: claim.email,
-                subject: 'Identity Verified: Welcome to your dashboard',
+                subject: `Identity Verified: You now own ${itemName}`,
                 template: 'claim_approved',
-                data: { claimId }
+                data: { itemName }
             });
         } else if (action === 'reject') {
             const { data: claim } = await supabase
                 .from('claim_requests')
-                .select('email')
+                .select('email, items(name)')
                 .eq('id', claimId)
                 .single();
 
@@ -67,11 +68,12 @@ export async function POST(request: NextRequest) {
             if (updateError) throw updateError;
 
             if (claim) {
+                const itemName = (claim.items as any)?.name || 'your tool';
                 await sendEmail({
                     to: claim.email,
-                    subject: 'Founder Claim Update',
+                    subject: `Founder Claim Update: ${itemName}`,
                     template: 'claim_rejected',
-                    data: { claimId }
+                    data: { itemName, reason: 'Verifiable information was missing or incorrect.' }
                 });
             }
         }

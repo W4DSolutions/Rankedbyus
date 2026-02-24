@@ -17,7 +17,8 @@ import {
     User,
     Calendar,
     Link as LinkIcon,
-    ArrowUpRight
+    ArrowUpRight,
+    Sparkles
 } from 'lucide-react';
 import type { Article, Item } from '@/types/models';
 import { cn, formatDate } from '@/lib/utils';
@@ -200,33 +201,74 @@ export function AdminArticleList({ initialArticles, items }: AdminArticleListPro
                                     className="w-full bg-white dark:bg-slate-900 rounded-xl px-4 py-3 text-sm font-bold border border-slate-200 dark:border-slate-800 focus:ring-2 ring-purple-500/20 focus:border-purple-500 focus:outline-none"
                                 />
                             </div>
-                            <div className="flex flex-col gap-4 h-full pt-6">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={newArticle.is_published || false}
-                                        onChange={(e) => setNewArticle({
-                                            ...newArticle,
-                                            is_published: e.target.checked,
-                                            published_at: e.target.checked && !newArticle.published_at ? new Date().toISOString() : newArticle.published_at
-                                        })}
-                                        className="h-5 w-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-                                    />
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Publish Status</span>
-                                </label>
-
-                                {newArticle.is_published && (
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Schedule Date (UTC)</label>
-                                        <input
-                                            type="datetime-local"
-                                            value={newArticle.published_at ? new Date(newArticle.published_at).toISOString().slice(0, 16) : ''}
-                                            onChange={(e) => setNewArticle({ ...newArticle, published_at: new Date(e.target.value).toISOString() })}
-                                            className="w-full bg-white dark:bg-slate-900 rounded-xl px-4 py-2 text-sm font-bold border border-slate-200 dark:border-slate-800 focus:ring-2 ring-purple-500/20 focus:border-purple-500 focus:outline-none"
-                                        />
-                                    </div>
-                                )}
+                            <div className="flex items-center justify-end h-full pt-8">
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        if (!newArticle.title) {
+                                            alert("Enter a Headline/Topic first to use AI");
+                                            return;
+                                        }
+                                        setIsSaving(true);
+                                        try {
+                                            const linkedToolName = items.find(i => i.id === newArticle.item_id)?.name;
+                                            const res = await fetch('/api/admin/ai-article', {
+                                                method: 'POST',
+                                                body: JSON.stringify({
+                                                    topic: newArticle.title,
+                                                    linkedToolName
+                                                })
+                                            });
+                                            if (res.ok) {
+                                                const { data } = await res.json();
+                                                setNewArticle(prev => ({
+                                                    ...prev,
+                                                    title: data.title,
+                                                    excerpt: data.excerpt,
+                                                    content: data.content
+                                                }));
+                                            } else {
+                                                alert("AI Generation failed. Check API key.");
+                                            }
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
+                                    }}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-[10px] font-black uppercase text-white hover:opacity-90 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                    AI Deep Dive Engine
+                                </button>
                             </div>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={newArticle.is_published || false}
+                                    onChange={(e) => setNewArticle({
+                                        ...newArticle,
+                                        is_published: e.target.checked,
+                                        published_at: e.target.checked && !newArticle.published_at ? new Date().toISOString() : newArticle.published_at
+                                    })}
+                                    className="h-5 w-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                                />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Publish Status</span>
+                            </label>
+
+                            {newArticle.is_published && (
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Schedule Date (UTC)</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={newArticle.published_at ? new Date(newArticle.published_at).toISOString().slice(0, 16) : ''}
+                                        onChange={(e) => setNewArticle({ ...newArticle, published_at: new Date(e.target.value).toISOString() })}
+                                        className="w-full bg-white dark:bg-slate-900 rounded-xl px-4 py-2 text-sm font-bold border border-slate-200 dark:border-slate-800 focus:ring-2 ring-purple-500/20 focus:border-purple-500 focus:outline-none"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div>

@@ -239,6 +239,46 @@ export function AdminAssetList({ initialAssets, categories }: AdminAssetListProp
                                     Founder Verified Status
                                 </label>
                             </div>
+                            <div className="flex items-center justify-end">
+                                <button
+                                    onClick={async (e) => {
+                                        e.preventDefault();
+                                        if (!newAsset.name || !newAsset.website_url) {
+                                            alert("Enter Name and URL first to use AI");
+                                            return;
+                                        }
+                                        setIsSaving(true);
+                                        try {
+                                            const categoryName = categories.find(c => c.id === newAsset.category_id)?.name;
+                                            const res = await fetch('/api/admin/ai-generate', {
+                                                method: 'POST',
+                                                body: JSON.stringify({
+                                                    name: newAsset.name,
+                                                    url: newAsset.website_url,
+                                                    category: categoryName
+                                                })
+                                            });
+                                            if (res.ok) {
+                                                const { data } = await res.json();
+                                                setNewAsset(prev => ({
+                                                    ...prev,
+                                                    description: data.description
+                                                    // We could also handle tags here if needed
+                                                }));
+                                            } else {
+                                                alert("AI generation failed. Check API key.");
+                                            }
+                                        } finally {
+                                            setIsSaving(false);
+                                        }
+                                    }}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-[10px] font-black uppercase text-white hover:bg-purple-500 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                    AI Magic Fill
+                                </button>
+                            </div>
                         </div>
 
                         <div>

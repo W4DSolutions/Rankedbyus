@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { captureOrder } from '@/lib/paypal';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         // Find category ID
         const { data: categoryData, error: categoryError } = await supabase
             .from('categories')
-            .select('id')
+            .select('id, name')
             .eq('slug', category)
             .single();
 
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
         const sessionId = cookieStore.get('rbu_session_id')?.value;
 
         // Insert item with pending status
+        const submitterEmail = user?.email || body.submitter_email || null;
         const { data: newItem, error: insertError } = await supabase
             .from('items')
             .insert({
@@ -139,7 +141,7 @@ export async function POST(request: NextRequest) {
                 score: 0,
                 vote_count: 0,
                 user_id: user?.id || null, // Link to authenticated user
-                submitter_email: user?.email || body.submitter_email || null, // Auto-fill email if logged in
+                submitter_email: submitterEmail, // Auto-fill email if logged in
                 // VERIFIED Payment fields
                 transaction_id: paymentDetail.transactionId,
                 payment_amount: parseFloat(paymentDetail.amount),
@@ -155,6 +157,30 @@ export async function POST(request: NextRequest) {
                 { status: 500 }
             );
         }
+
+        // --- EMAIL NOTIFICATIONS ---
+        // 1. Notify User
+        if (submitterEmail) {
+            await sendEmail({
+                to: submitterEmail,
+                subject: `Submission Received: ${name}`,
+                template: 'submission_received',
+                data: { itemName: name }
+            });
+        }
+
+        // 2. Notify Admin
+        const adminEmail = process.env.MANAGEMENT_EMAIL || 'admin@rankedbyus.com';
+        await sendEmail({
+            to: adminEmail,
+            subject: `🚨 NEW PAID SUBMISSION: ${name}`,
+            template: 'admin_new_submission',
+            data: {
+                itemName: name,
+                category: categoryData.name,
+                submitterEmail: submitterEmail || 'Anonymous'
+            }
+        });
 
         return NextResponse.json({
             success: true,

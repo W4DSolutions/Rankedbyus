@@ -273,7 +273,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                     <ShieldCheck size={20} className="text-green-500" />
                                     <span className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Secure Audit</span>
                                 </div>
-                                <p className="text-xs text-slate-500 font-medium">Validation requires a one-time $2.00 setup fee to deter automated spam and fund manual review.</p>
+                                <p className="text-xs text-slate-500 font-medium">Validation requires a one-time $19.00 setup fee to deter automated spam and fund manual review.</p>
                             </div>
                         </div>
 
@@ -287,7 +287,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                 </div>
                                 <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Submit Tool</h2>
                                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                                    Submit your asset for community validation. Subject to $2.00 manual audit fee.
+                                    Submit your asset for community validation. Subject to $19.00 manual audit fee.
                                 </p>
                             </div>
 
@@ -508,14 +508,14 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                         <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
                                             <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
                                                 <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Review & Audit</span>
-                                                <span className="text-sm font-black text-slate-900 dark:text-white">$2.00 USD</span>
+                                                <span className="text-sm font-black text-slate-900 dark:text-white">$19.00 USD</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
                                                     <CreditCard size={18} className="text-blue-500" />
                                                     <span className="font-bold text-slate-900 dark:text-white">Total Due</span>
                                                 </div>
-                                                <span className="text-2xl font-black text-slate-900 dark:text-white">$2.00</span>
+                                                <span className="text-2xl font-black text-slate-900 dark:text-white">$19.00</span>
                                             </div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 text-center">
                                                 One-time fee for manual validation and listing processing.
@@ -539,7 +539,7 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                                                     {
                                                                         amount: {
                                                                             currency_code: "USD",
-                                                                            value: "2.00",
+                                                                            value: "19.00",
                                                                         },
                                                                         description: `Listing Fee: ${formData.name}`,
                                                                     },
