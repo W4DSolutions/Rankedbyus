@@ -54,7 +54,7 @@ export function ReviewList({ reviews }: ReviewListProps) {
                             </div>
                             <div className="flex flex-col items-end gap-2 text-right">
                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    {new Date(review.created_at).toLocaleDateString()}
+                                    {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase()}
                                 </div>
                                 <ReviewHelpfulButton
                                     reviewId={review.id}

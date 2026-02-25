@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Star, CheckCircle2, X, MessageSquarePlus } from 'lucide-react';
 import { StarRating } from './StarRating';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface ReviewModalProps {
     itemId: string;
@@ -15,6 +16,7 @@ interface ReviewModalProps {
 }
 
 export function ReviewModal({ itemId, itemName, onSuccess, className, isAuthenticated = true }: ReviewModalProps) {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
@@ -61,6 +63,7 @@ export function ReviewModal({ itemId, itemName, onSuccess, className, isAuthenti
 
             if (response.ok) {
                 setSuccess(true);
+                router.refresh();
                 setTimeout(() => {
                     setIsOpen(false);
                     setSuccess(false);

@@ -126,10 +126,12 @@ create policy "Anyone can submit a review" on public.reviews for insert with che
 create policy "Users can view their own reviews" on public.reviews for select using (auth.uid() = user_id or (session_id is not null));
 
 
--- Adding rating stats to items
+-- Adding analytics and rating stats to items
 alter table public.items 
-add column average_rating float not null default 0,
-add column review_count int not null default 0;
+add column if not exists user_id uuid references auth.users(id),
+add column if not exists click_count int not null default 0,
+add column if not exists average_rating float not null default 0,
+add column if not exists review_count int not null default 0;
 
 -- Function to increment click count
 create or replace function increment_click_count(item_row_id uuid)

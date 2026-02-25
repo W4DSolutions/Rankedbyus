@@ -5,6 +5,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { formatScore } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 interface VoteButtonsProps {
     itemId: string;
@@ -12,6 +13,7 @@ interface VoteButtonsProps {
 }
 
 export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
+    const router = useRouter();
     const [score, setScore] = useState(initialScore);
     const [userVote, setUserVote] = useState<1 | -1 | null>(null);
     const [isVoting, setIsVoting] = useState(false);
@@ -74,6 +76,8 @@ export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
             if (data.new_score !== undefined) {
                 setScore(data.new_score);
             }
+            // Force a refresh to update everything else (sidebar, trending lists)
+            router.refresh();
         } catch (error) {
             // Revert optimistic update on error
             setScore((prev) => prev - scoreDelta);
