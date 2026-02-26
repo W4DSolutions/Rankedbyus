@@ -29,7 +29,6 @@ interface ToolCardProps {
 export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentVoteCount, setCurrentVoteCount] = useState(tool.vote_count);
-    const [currentScore, setCurrentScore] = useState(tool.score);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -80,7 +79,6 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
                         initialScore={tool.score}
                         initialVoteCount={tool.vote_count}
                         onVoteChange={(newScore, newCount) => {
-                            setCurrentScore(newScore);
                             setCurrentVoteCount(newCount);
                         }}
                     />

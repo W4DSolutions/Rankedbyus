@@ -82,6 +82,15 @@ export default async function ProfilePage() {
 
     if (receivedError) console.error("Profile page received reviews error:", receivedError);
 
+    // 5. Calculate Reputation Score
+    const voteCount = votes?.length || 0;
+    const reviewCount = reviews?.length || 0;
+    const submissionCount = submissions?.filter(s => s.status === 'approved').length || 0;
+    const intelCount = receivedReviews?.length || 0;
+
+    // Reputation Formula: (Votes * 2) + (Reviews * 10) + (Approved Submissions * 50) + (Intel Received * 5)
+    const reputationScore = (voteCount * 2) + (reviewCount * 10) + (submissionCount * 50) + (intelCount * 5);
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
             {/* Header */}
@@ -113,6 +122,7 @@ export default async function ProfilePage() {
                     reviews={reviews as unknown as ReviewWithItem[] || []}
                     submissions={submissions as unknown as ItemWithDetails[] || []}
                     receivedReviews={receivedReviews as unknown as ReviewWithItem[] || []}
+                    reputationScore={reputationScore}
                 />
             </main>
         </div>

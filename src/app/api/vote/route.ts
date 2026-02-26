@@ -128,11 +128,9 @@ export async function POST(request: NextRequest) {
             .eq('value', 1)
             .gte('created_at', sevenDaysAgo.toISOString());
 
-        // Algorithm: (Up - Down) + (Recent Up * 2)
-        const baseScore = (upvotes || 0) - (downvotes || 0);
-        const trendingBonus = (recentUpvotes || 0) * 2;
-        const newScore = baseScore + trendingBonus;
-
+        // Algorithm: (Up - Down) - Simple Linear Score as per user requirement
+        // We calculate this based on the total historical votes for the item
+        const newScore = (upvotes || 0) - (downvotes || 0);
         const newVoteCount = (upvotes || 0) + (downvotes || 0);
 
         // Update item score

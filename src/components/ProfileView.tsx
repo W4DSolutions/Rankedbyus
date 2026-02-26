@@ -29,6 +29,7 @@ interface ProfileViewProps {
     reviews: ReviewWithItem[];
     submissions: ItemWithDetails[];
     receivedReviews: ReviewWithItem[];
+    reputationScore?: number;
 }
 
 export function ProfileView({
@@ -38,7 +39,8 @@ export function ProfileView({
     upvotedTools,
     reviews,
     submissions,
-    receivedReviews
+    receivedReviews,
+    reputationScore = 0
 }: ProfileViewProps) {
     const [activeTab, setActiveTab] = useState<'upvoted' | 'reviews' | 'submissions' | 'founder'>('upvoted');
     const [editingTool, setEditingTool] = useState<ItemWithDetails | null>(null);
@@ -211,7 +213,15 @@ export function ProfileView({
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-500 font-bold uppercase tracking-tight">Status</span>
-                            <span className="text-blue-600 font-black uppercase">Verified Auditor</span>
+                            <span className="text-blue-600 font-black uppercase">
+                                {reputationScore > 500 ? 'Registry Legend' :
+                                    reputationScore > 200 ? 'Senior Analyst' :
+                                        reputationScore > 50 ? 'Active Auditor' : 'Verified Member'}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-bold uppercase tracking-tight">Reputation</span>
+                            <span className="text-slate-900 dark:text-white font-black">{reputationScore} Points</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-500 font-bold uppercase tracking-tight">Active Since</span>
