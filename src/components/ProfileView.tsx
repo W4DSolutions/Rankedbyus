@@ -12,7 +12,6 @@ import {
     PencilLine,
     TrendingUp,
     ShieldAlert,
-    CheckCircle2,
     Reply
 } from 'lucide-react';
 import { ToolCard } from '@/components/ToolCard';
@@ -205,27 +204,59 @@ export function ProfileView({
                     </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 p-6 hidden lg:block">
-                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <History size={14} />
-                        Identity Reputation
+                <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-8 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                        <History size={120} />
+                    </div>
+
+                    <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
+                        <TrendingUp size={14} className="text-blue-500" />
+                        Engagement Intensity
                     </h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-500 font-bold uppercase tracking-tight">Status</span>
-                            <span className="text-blue-600 font-black uppercase">
-                                {reputationScore > 500 ? 'Registry Legend' :
-                                    reputationScore > 200 ? 'Senior Analyst' :
-                                        reputationScore > 50 ? 'Active Auditor' : 'Verified Member'}
-                            </span>
+
+                    <div className="space-y-8">
+                        <div>
+                            <div className="flex items-end justify-between mb-3">
+                                <span className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                                    {reputationScore > 500 ? 'Registry Legend' :
+                                        reputationScore > 200 ? 'Senior Analyst' :
+                                            reputationScore > 50 ? 'Active Auditor' : 'Verified Member'}
+                                </span>
+                                <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/5 px-2 py-1 rounded-md uppercase tracking-tight">
+                                    Tier {reputationScore > 500 ? 'IV' : reputationScore > 200 ? 'III' : reputationScore > 50 ? 'II' : 'I'}
+                                </span>
+                            </div>
+
+                            {/* Progress Bar to Next Tier */}
+                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                                <div
+                                    className="h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                                    style={{
+                                        width: `${Math.min(100, (reputationScore / (reputationScore > 500 ? 1000 : reputationScore > 200 ? 500 : reputationScore > 50 ? 200 : 50)) * 100)}%`
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-500 font-bold uppercase tracking-tight">Reputation</span>
-                            <span className="text-slate-900 dark:text-white font-black">{reputationScore} Points</span>
+
+                        <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Reputation Score</span>
+                                <span className="text-xl font-black text-slate-900 dark:text-white font-mono">{reputationScore.toLocaleString()}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Since</span>
+                                <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">Feb 2026</span>
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-500 font-bold uppercase tracking-tight">Active Since</span>
-                            <span className="text-slate-900 dark:text-white font-black">2026.02</span>
+
+                        <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 p-4 border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-start gap-3">
+                                <ShieldAlert size={14} className="text-blue-500 mt-0.5" />
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                                    Your reputation is determined by verified audit signals, precise voting activity, and technical asset submissions.
+                                    {reputationScore < 50 && " Reach 50 points to unlock Auditor status."}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -91,27 +91,34 @@ export async function POST(request: NextRequest) {
                 .eq('id', existingVote.id);
         } else {
             // Insert new vote
+            const cookieStore = await import('next/headers').then(mod => mod.cookies());
+            const sessionId = cookieStore.get('rbu_session_id')?.value;
+
             await supabase
                 .from('votes')
                 .insert({
                     item_id,
                     user_id: user.id,
+                    session_id: sessionId || null,
                     ip_address: ipAddress,
                     user_agent: userAgent,
                     value
                 });
         }
 
-        // 2. LOG THE ACTION FOR AUDIT
-        await supabase.from('vote_audit_logs').insert({
-            ip_address: ipAddress,
-            user_agent: userAgent,
-            user_id: user.id,
-            item_id,
-            action: 'vote_cast'
-        });
+        // 2. LOG THE ACTION FOR AUDIT (Silent Catch)
+        try {
+            await supabase.from('vote_audit_logs').insert({
+                item_id,
+                user_id: user.id,
+                action: value === null ? 'cancel' : value === 1 ? 'upvote' : 'downvote',
+                ip_address: ipAddress || 'unknown'
+            });
+        } catch (e) {
+            console.warn('Audit Logging skipped:', e);
+        }
 
-        // Recalculate score
+        // 3. Recalculate score (Linear: Up - Down)
         const { count: upvotes } = await supabase
             .from('votes')
             .select('*', { count: 'exact', head: true })
@@ -124,23 +131,11 @@ export async function POST(request: NextRequest) {
             .eq('item_id', item_id)
             .eq('value', -1);
 
-        // Calculate 7 days ago for trending bonus
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-        const { count: recentUpvotes } = await supabase
-            .from('votes')
-            .select('*', { count: 'exact', head: true })
-            .eq('item_id', item_id)
-            .eq('value', 1)
-            .gte('created_at', sevenDaysAgo.toISOString());
-
         // Algorithm: (Up - Down) - Simple Linear Score as per user requirement
-        // We calculate this based on the total historical votes for the item
         const newScore = (upvotes || 0) - (downvotes || 0);
         const newVoteCount = (upvotes || 0) + (downvotes || 0);
 
-        // Update item score
+        // Update item score (Synchronize with SQL Trigger logic locally for UI)
         await supabase
             .from('items')
             .update({

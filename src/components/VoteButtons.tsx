@@ -37,6 +37,12 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
         fetchUserVote();
     }, [itemId]);
 
+    // Keep state in sync with props
+    useEffect(() => {
+        setScore(initialScore);
+        setVoteCount(initialVoteCount);
+    }, [initialScore, initialVoteCount]);
+
     const handleVote = async (value: 1 | -1) => {
         if (isVoting) return;
 

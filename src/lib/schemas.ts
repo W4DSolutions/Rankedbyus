@@ -23,10 +23,12 @@ export const ReviewSchema = z.object({
         .min(1, "Rating must be at least 1")
         .max(5, "Rating cannot exceed 5"),
     comment: z.string()
-        .min(10, "Intelligence Signal must be at least 10 characters")
         .max(1000, "Signal too long (max 1000 chars)")
+        .transform(val => (!val || val.trim() === "") ? null : val.trim())
+        .refine(val => val === null || val.length >= 10, {
+            message: "Intelligence Signal must be at least 10 characters"
+        })
         .nullable()
-        .transform(val => val?.trim() === "" ? null : val)
 });
 
 // 3. User Profile Schema

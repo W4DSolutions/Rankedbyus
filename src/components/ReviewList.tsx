@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Review } from '@/types/models';
 import { StarRating } from '@/components/StarRating';
 import { ReviewHelpfulButton } from '@/components/ReviewHelpfulButton';

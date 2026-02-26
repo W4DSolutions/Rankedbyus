@@ -43,11 +43,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Insert review (starts as pending)
+        const cookieStore = await import('next/headers').then(mod => mod.cookies());
+        const sessionId = cookieStore.get('rbu_session_id')?.value;
+
         const { error: insertError } = await supabase
             .from('reviews')
             .insert({
                 item_id,
                 user_id: user.id,
+                session_id: sessionId || null,
                 rating: Math.round(rating),
                 comment: comment || null,
                 status: 'pending'

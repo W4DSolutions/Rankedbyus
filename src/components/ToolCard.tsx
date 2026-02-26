@@ -31,6 +31,14 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
     const [currentVoteCount, setCurrentVoteCount] = useState(tool.vote_count);
     const [currentScore, setCurrentScore] = useState(tool.score);
 
+    // Sync state with props during render to avoid cascading effects
+    const [prevTool, setPrevTool] = useState(tool);
+    if (tool.id !== prevTool.id || tool.score !== prevTool.score || tool.vote_count !== prevTool.vote_count) {
+        setPrevTool(tool);
+        setCurrentScore(tool.score);
+        setCurrentVoteCount(tool.vote_count);
+    }
+
     useEffect(() => {
         const checkAuth = async () => {
             const supabase = getSupabaseClient();
@@ -39,6 +47,7 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
         };
         checkAuth();
     }, []);
+
 
     return (
         <div
