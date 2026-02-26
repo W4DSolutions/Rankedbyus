@@ -17,10 +17,16 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { item_id, value } = body as { item_id: string; value: number | null };
 
-        // Validate input
-        if (!item_id || (value !== null && value !== 1 && value !== -1)) {
+        // 0. BASIC UUID VALIDATION
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!item_id || !uuidRegex.test(item_id)) {
+            return NextResponse.json({ error: 'Invalid Asset ID format' }, { status: 400 });
+        }
+
+        // Validate input value
+        if (value !== null && value !== 1 && value !== -1) {
             return NextResponse.json(
-                { error: 'Invalid input. Value must be 1, -1, or null' },
+                { error: 'Invalid signal value. Must be 1, -1, or null.' },
                 { status: 400 }
             );
         }
@@ -57,12 +63,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user already voted (strictly by user_id now)
-        const { data: existingVote } = await supabase
+        const { data: existingVote, error: checkError } = await supabase
             .from('votes')
             .select('*')
             .eq('item_id', item_id)
             .eq('user_id', user.id)
             .maybeSingle();
+
+        if (checkError) {
+            console.error('Check existing vote error:', checkError);
+            return NextResponse.json({ error: 'Failed to verify existing signal status.' }, { status: 500 });
+        }
 
         if (value === null) {
             // Remove vote

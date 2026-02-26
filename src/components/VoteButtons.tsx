@@ -75,28 +75,26 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error('Vote failed');
-            }
-
             const data = await response.json();
 
+            if (!response.ok) {
+                throw new Error(data.error || 'Vote failed');
+            }
+
             // Update with actual server response
-            if (data.new_score !== undefined) {
-                setScore(data.new_score);
-            }
-            if (data.vote_count !== undefined) {
-                setVoteCount(data.vote_count);
-            }
             if (data.new_score !== undefined && data.vote_count !== undefined) {
+                setScore(data.new_score);
+                setVoteCount(data.vote_count);
                 onVoteChange?.(data.new_score, data.vote_count);
             }
             // Force a refresh to update everything else (sidebar, trending lists)
             router.refresh();
-        } catch (error) {
+        } catch (error: any) {
             // Revert optimistic update on error
             setScore((prev) => prev - scoreDelta);
-            setUserVote(userVote);
+            setVoteCount((prev) => prev - countDelta);
+            onVoteChange?.(score, voteCount);
+            alert(`Signal Failure: ${error.message || 'The registry could not ingest your vote.'}`);
             console.error('Vote error:', error);
         } finally {
             setIsVoting(false);

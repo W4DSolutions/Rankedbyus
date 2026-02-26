@@ -37,12 +37,12 @@ export default async function ProfilePage() {
             )
         `)
         .eq('user_id', user.id)
-        .eq('value', 1)
         .order('created_at', { ascending: false });
 
     if (votesError) console.error("Profile page votes error:", votesError);
-    const upvotedToolsRaw = votes?.map(v => v.items).filter(Boolean) as unknown as ItemWithDetails[] || [];
-    // Deduplicate
+
+    // Separate upvoted tools for the "Endorsed" tab
+    const upvotedToolsRaw = votes?.filter(v => v.value === 1).map(v => v.items).filter(Boolean) as unknown as ItemWithDetails[] || [];
     const upvotedTools = Array.from(new Map(upvotedToolsRaw.map(item => [item.id, item])).values());
 
     // 2. Fetch User Reviews (Reviews written BY the user)

@@ -29,6 +29,7 @@ interface ToolCardProps {
 export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentVoteCount, setCurrentVoteCount] = useState(tool.vote_count);
+    const [currentScore, setCurrentScore] = useState(tool.score);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -79,6 +80,7 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
                         initialScore={tool.score}
                         initialVoteCount={tool.vote_count}
                         onVoteChange={(newScore, newCount) => {
+                            setCurrentScore(newScore);
                             setCurrentVoteCount(newCount);
                         }}
                     />
@@ -152,9 +154,9 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
                     </p>
 
                     <div className="flex flex-wrap justify-center md:justify-start items-center gap-6">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-xl transition-all">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-xl transition-all shadow-inner">
                             <TrendingUp size={14} className="text-blue-500" />
-                            {currentVoteCount} Power Rating
+                            {currentScore >= 0 ? `+${currentScore}` : currentScore} Power Rating ({currentVoteCount} Signals)
                         </div>
                         <ReviewModal
                             itemId={tool.id}
