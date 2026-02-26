@@ -10,11 +10,14 @@ import { useRouter } from 'next/navigation';
 interface VoteButtonsProps {
     itemId: string;
     initialScore: number;
+    initialVoteCount?: number;
+    onVoteChange?: (newScore: number, newCount: number) => void;
 }
 
-export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
+export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVoteChange }: VoteButtonsProps) {
     const router = useRouter();
     const [score, setScore] = useState(initialScore);
+    const [voteCount, setVoteCount] = useState(initialVoteCount);
     const [userVote, setUserVote] = useState<1 | -1 | null>(null);
     const [isVoting, setIsVoting] = useState(false);
 
@@ -49,9 +52,14 @@ export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
         // Optimistic update
         const wasVoted = userVote === value;
         const newVote = wasVoted ? null : value;
+
+        // Simple optimistic score calculation (ignoring complex trending bonus for UI smoothness)
         const scoreDelta = wasVoted ? -value : (userVote ? value - userVote : value);
+        const countDelta = wasVoted ? -1 : (userVote ? 0 : 1);
 
         setScore((prev) => prev + scoreDelta);
+        setVoteCount((prev) => prev + countDelta);
+        onVoteChange?.(score + scoreDelta, voteCount + countDelta);
         setUserVote(newVote);
         setIsVoting(true);
 
@@ -76,6 +84,12 @@ export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
             // Update with actual server response
             if (data.new_score !== undefined) {
                 setScore(data.new_score);
+            }
+            if (data.vote_count !== undefined) {
+                setVoteCount(data.vote_count);
+            }
+            if (data.new_score !== undefined && data.vote_count !== undefined) {
+                onVoteChange?.(data.new_score, data.vote_count);
             }
             // Force a refresh to update everything else (sidebar, trending lists)
             router.refresh();

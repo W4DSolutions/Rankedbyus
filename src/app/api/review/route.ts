@@ -16,8 +16,14 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { item_id, rating, comment } = body as { item_id: string; rating: number; comment?: string };
 
-        if (!item_id || !rating || rating < 1 || rating > 5) {
-            return NextResponse.json({ error: 'Invalid item_id or rating' }, { status: 400 });
+        // Basic UUID validation
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!item_id || !uuidRegex.test(item_id)) {
+            return NextResponse.json({ error: 'Invalid Asset ID format' }, { status: 400 });
+        }
+
+        if (!rating || rating < 1 || rating > 5) {
+            return NextResponse.json({ error: 'Rating must be between 1 and 5 stars' }, { status: 400 });
         }
 
         // Check if user already reviewed this tool
@@ -42,19 +48,23 @@ export async function POST(request: NextRequest) {
             .insert({
                 item_id,
                 user_id: user.id,
-                rating,
-                comment,
+                rating: Math.round(rating),
+                comment: comment || null,
                 status: 'pending'
             });
 
         if (insertError) {
             console.error('Supabase Review Insertion Error:', insertError);
+            // Handle unique constraint violation specifically
+            if (insertError.code === '23505') {
+                return NextResponse.json({ error: 'You have already reviewed this tool' }, { status: 400 });
+            }
             return NextResponse.json({ error: insertError.message || 'Database error occurred' }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, message: 'Review submitted for moderation' });
     } catch (error: any) {
         console.error('Review API Panic:', error);
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error. Please ensure the tool ID is valid.' }, { status: 500 });
     }
 }
