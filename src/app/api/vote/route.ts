@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
+import { VoteSchema } from '@/lib/schemas';
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,21 +16,16 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { item_id, value } = body as { item_id: string; value: number | null };
 
-        // 0. BASIC UUID VALIDATION
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!item_id || !uuidRegex.test(item_id)) {
-            return NextResponse.json({ error: 'Invalid Asset ID format' }, { status: 400 });
-        }
-
-        // Validate input value
-        if (value !== null && value !== 1 && value !== -1) {
+        // 0. STRUCTURAL VALIDATION (ZOD)
+        const validation = VoteSchema.safeParse(body);
+        if (!validation.success) {
             return NextResponse.json(
-                { error: 'Invalid signal value. Must be 1, -1, or null.' },
+                { error: validation.error.issues[0].message },
                 { status: 400 }
             );
         }
+        const { item_id, value } = validation.data;
 
         // Get Client IP
         const headersList = await headers();

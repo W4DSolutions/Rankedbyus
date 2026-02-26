@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ReviewSchema } from '@/lib/schemas';
 
 export async function POST(request: NextRequest) {
     try {
@@ -14,17 +15,16 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { item_id, rating, comment } = body as { item_id: string; rating: number; comment?: string };
 
-        // Basic UUID validation
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!item_id || !uuidRegex.test(item_id)) {
-            return NextResponse.json({ error: 'Invalid Asset ID format' }, { status: 400 });
+        // 0. STRUCTURAL VALIDATION (ZOD)
+        const validation = ReviewSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: validation.error.issues[0].message },
+                { status: 400 }
+            );
         }
-
-        if (!rating || rating < 1 || rating > 5) {
-            return NextResponse.json({ error: 'Rating must be between 1 and 5 stars' }, { status: 400 });
-        }
+        const { item_id, rating, comment } = validation.data;
 
         // Check if user already reviewed this tool
         const { data: existingReview, error: checkError } = await supabase

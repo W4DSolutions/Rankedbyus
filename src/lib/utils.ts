@@ -74,9 +74,14 @@ export function getLogoUrl(logoUrl: string | null | undefined, name: string, web
         } catch (_e) { }
     }
 
-    // 4. Ultimate Fallback: UI Avatars
+    // 4. Use Image Proxy for problematic sources
     const isBadSource = logoUrl?.includes('logo.clearbit.com') || logoUrl?.includes('gstatic.com');
-    if (!logoUrl || logoUrl === '' || logoUrl === 'null' || logoUrl === 'undefined' || isBadSource) {
+    if (logoUrl && isBadSource) {
+        return `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+    }
+
+    // 5. Ultimate Fallback: UI Avatars
+    if (!logoUrl || logoUrl === '' || logoUrl === 'null' || logoUrl === 'undefined') {
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e293b&color=fff&size=128&bold=true`;
     }
 
