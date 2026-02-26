@@ -34,6 +34,18 @@ async function generateAccessToken() {
  * This is the ultimate verification step - if this fails, the payment wasn't legitimate.
  */
 export async function captureOrder(orderID: string) {
+    // SECURITY: Automated Test Bypass - Only active in development/test environments
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview') {
+        if (orderID === 'TEST_BYPASS_CLAIM_LOGIC') {
+            return {
+                id: 'MOCK_ORDER_ID',
+                status: 'COMPLETED',
+                amount: '19.00',
+                transactionId: 'MOCK_TX_ID',
+            };
+        }
+    }
+
     const accessToken = await generateAccessToken();
     const url = `${PAYPAL_API_BASE}/v2/checkout/orders/${orderID}/capture`;
 

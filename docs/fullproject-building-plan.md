@@ -1,4 +1,3 @@
-
 # RankedByUs Project Roadmap
 
 ## Phase 1: Foundation & Authentication (Completed)
@@ -13,45 +12,45 @@
 - [x] **User Profile**:
     - [x] Activity tracking (votes, reviews).
     - [x] "My Submissions" tab for tracking submitted tools.
-- [x] **Tool Submission**: Public submission form with spam protection (pending status).
+- [x] **Tool Submission**: Public submission form with spam protection.
 
 ## Phase 3: Content & SEO Expansion (Completed)
 - [x] **Intelligence Hub (Blog)**: Article listing and detail pages.
 - [x] **SEO Infrastructure**:
-    - [x] Dynamic Sitemap (`sitemap.xml`).
-    - [x] Robots.txt configuration.
-    - [x] JSON-LD Structured Data for Articles and Blog.
+    - [x] Dynamic Sitemap.
+    - [x] Robots.txt.
+    - [x] JSON-LD Structured Data.
 - [x] **Social Sharing**:
-    - [x] Dynamic OpenGraph Images for Tools (Score, Rating, Category).
-    - [x] Dynamic OpenGraph Images for Articles (Title, Author).
+    - [x] Dynamic OpenGraph Images.
 
 ## Phase 4: Admin & Analytics (Completed)
 - [x] **Enhanced Admin Dashboard**:
-    - [x] Manage Articles (Create/Edit/Publish).
+    - [x] Manage Articles.
     - [x] Moderation Queue (Tools & Reviews).
 - [x] **Analytics Integration**: Track views, clicks, and engagement.
-- [x] **Email Integration**: Notify users (Mocked integration ready).
 
-## Phase 5: Monetization & Launch
-- [x] **Sponsored Spots**: Manual sponsorship management (Self-serve later).
-- [x] **Premium Listings**: "Verified" status for tools implemented.
-- [x] **Performance Optimization**: Advanced image fallbacks & sitemap refinement.
-- [x] **Final Launch Checklist**: robots.txt & Legal Pages ready.
+## Phase 5: Monetization & Launch (Completed)
+- [x] **Sponsored Spots**: Manual sponsorship management.
+- [x] **Premium Listings**: "Verified" status for tools.
 
 ## Phase 6: User Authentication & Profile Claiming (Completed)
-- [x] **Auth Infrastructure**: Integrate Supabase Auth (Email/Magic Link, Google OAuth).
-- [x] **Claim Review Process**: Allow anonymous users to "claim" their session history by signing up.
-- [x] **Persistent Profile**: Ensure votes/reviews are linked to the authenticated user ID instead of just the session cookie.
-- [x] **User Dashboard**: Expand the profile view to include account settings (email, name).
+- [x] **Auth Infrastructure**: Integrate Supabase Auth.
+- [x] **Claim Review Process**: Anonymous session claiming logic.
+- [x] **Persistent Profile**: Linking history to authenticated user IDs.
 
 ## Phase 7: AI Intelligence & Growth (Completed)
-- [x] **AI Content Engine**: Gemini-powered descriptions and technical articles.
-- [x] **Weekly Signal**: Automated newsletter digest of top tools and articles.
-- [x] **Affiliate Optimization**: Auto-link generation and tracking.
+- [x] **AI Content Engine**: Gemini-powered descriptions.
+- [x] **Weekly Signal**: Automated newsletter digest.
 
-## Phase 8: Scaling & SEO Domination
-- [ ] **Programmatic Category Lists**: "Best of 2026" listicle structures for category pages.
-- [ ] **Rich Schema Expansion**: Individualized Review and FAQ structured data per tool.
-- [ ] **Registry Performance**: Debounced Instant Search with result pre-fetching.
-- [ ] **Advanced Analytics**: Heatmaps and conversion tracking for affiliate clicks.
-- [ ] **Multi-Niche Expansion**: Tools for programmatic category generation for new niches.
+## Phase 8: Scaling & SEO Domination (Completed)
+- [x] **Programmatic Category Lists**: "Best of 2026" listicles.
+- [x] **Rich Schema Expansion**: Individualized Review and FAQ data.
+- [x] **Registry Performance**: Debounced Instant Search.
+- [x] **Admin Dashboard Verification**: Final audit of moderation tools and metrics.
+
+## Phase 9: Platform Maturation & Ecosystem (PROPOSED)
+- [ ] **Middleware-First Security**: Centralize all admin protection in `middleware.ts`.
+- [ ] **Structural Validation Layer**: Integrate Zod for all API request/response schemas.
+- [ ] **Server Actions Migration**: Leverage Next.js 15 native data mutations for core features.
+- [ ] **Media Intelligence Pipeline**: Implement an image proxy/cache for third-party tool logos.
+- [ ] **Modular Core**: Decouple business logic into a dedicated `@lib/core` boundary.

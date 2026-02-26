@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { verifyAdmin } from '@/lib/auth-guards';
 
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
-    const cookieStore = await cookies();
-    const adminSession = cookieStore.get('admin_session');
+    const isAdmin = await verifyAdmin();
 
-    if (!adminSession || adminSession.value !== 'authenticated') {
+    if (!isAdmin) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
+        const { id } = await params;
         const body = await request.json();
         const supabase = createAdminClient();
 
@@ -43,15 +42,14 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
-    const cookieStore = await cookies();
-    const adminSession = cookieStore.get('admin_session');
+    const isAdmin = await verifyAdmin();
 
-    if (!adminSession || adminSession.value !== 'authenticated') {
+    if (!isAdmin) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
+        const { id } = await params;
         const supabase = createAdminClient();
         const { error } = await supabase
             .from('articles')

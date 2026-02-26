@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Authentication required to vote' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
         const { item_id, value } = body as { item_id: string; value: number | null };
 
@@ -47,30 +56,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get or create session ID from cookies
-        const cookieStore = await cookies();
-        let sessionId = cookieStore.get('rbu_session_id')?.value;
-
-        if (!sessionId) {
-            sessionId = crypto.randomUUID();
-            cookieStore.set('rbu_session_id', sessionId, {
-                maxAge: 60 * 60 * 24 * 365, // 1 year
-                httpOnly: true,
-                sameSite: 'lax',
-            });
-        }
-
-        // Get authenticated user
-        const { data: { user } } = await supabase.auth.getUser();
-
-        // Check if user already voted (by user_id OR session OR IP)
-        let existingVoteQuery = supabase.from('votes').select('*').eq('item_id', item_id);
-        if (user) {
-            existingVoteQuery = existingVoteQuery.eq('user_id', user.id);
-        } else {
-            existingVoteQuery = existingVoteQuery.or(`session_id.eq.${sessionId},ip_address.eq.${ipAddress}`);
-        }
-        const { data: existingVote } = await existingVoteQuery.maybeSingle();
+        // Check if user already voted (strictly by user_id now)
+        const { data: existingVote } = await supabase
+            .from('votes')
+            .select('*')
+            .eq('item_id', item_id)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
         if (value === null) {
             // Remove vote
@@ -86,9 +78,8 @@ export async function POST(request: NextRequest) {
                 .from('votes')
                 .update({
                     value,
-                    session_id: sessionId, // Normalize to current session
-                    ip_address: ipAddress,  // Update with current IP
-                    user_id: user?.id || existingVote.user_id // Link to user if they just logged in
+                    ip_address: ipAddress,
+                    user_id: user.id
                 })
                 .eq('id', existingVote.id);
         } else {
@@ -97,8 +88,7 @@ export async function POST(request: NextRequest) {
                 .from('votes')
                 .insert({
                     item_id,
-                    session_id: sessionId,
-                    user_id: user?.id || null, // Link vote to user if authenticated
+                    user_id: user.id,
                     ip_address: ipAddress,
                     user_agent: userAgent,
                     value
@@ -109,7 +99,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('vote_audit_logs').insert({
             ip_address: ipAddress,
             user_agent: userAgent,
-            session_id: sessionId,
+            user_id: user.id,
             item_id,
             action: 'vote_cast'
         });
@@ -163,15 +153,6 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Vote error:', error);
-
-        // Handle case where ip_address column might not exist yet
-        if (error?.message?.includes('column "ip_address" of relation "votes" does not exist')) {
-            return NextResponse.json(
-                { error: 'Database migration required: Please run the SQL to add ip_address column to votes table.' },
-                { status: 500 }
-            );
-        }
-
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }
@@ -193,32 +174,18 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const headersList = await headers();
-        const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] ||
-            headersList.get('x-real-ip') ||
-            '127.0.0.1';
-
-        const cookieStore = await cookies();
-        const sessionId = cookieStore.get('rbu_session_id')?.value;
-
         const { data: { user } } = await supabase.auth.getUser();
 
-        let query = supabase
-            .from('votes')
-            .select('value')
-            .eq('item_id', itemId);
-
-        if (user) {
-            query = query.eq('user_id', user.id);
-        } else if (sessionId && ipAddress) {
-            query = query.or(`session_id.eq.${sessionId},ip_address.eq.${ipAddress}`);
-        } else if (sessionId) {
-            query = query.eq('session_id', sessionId);
-        } else {
-            query = query.eq('ip_address', ipAddress);
+        if (!user) {
+            return NextResponse.json({ user_vote: null });
         }
 
-        const { data: vote } = await query.maybeSingle();
+        const { data: vote } = await supabase
+            .from('votes')
+            .select('value')
+            .eq('item_id', itemId)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
         return NextResponse.json({
             user_vote: vote?.value || null,
@@ -229,4 +196,3 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ user_vote: null });
     }
 }
-

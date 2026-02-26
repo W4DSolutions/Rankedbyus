@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { generateToolDescription } from '@/lib/ai';
+import { verifyAdmin } from '@/lib/auth-guards';
 
 export async function POST(request: NextRequest) {
     try {
-        const supabase = await createClient();
-
-        // Check admin session (simple check for now, assuming middleware handles basic auth)
-        const { data: { user } } = await supabase.auth.getUser();
-
-        // Add your admin verification logic here
-        // if (!user || user.email !== 'admin@rankedbyus.com') ...
+        const isAdmin = await verifyAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const body = await request.json();
         const { name, url, category } = body;

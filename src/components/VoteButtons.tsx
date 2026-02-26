@@ -37,6 +37,7 @@ export function VoteButtons({ itemId, initialScore }: VoteButtonsProps) {
     const handleVote = async (value: 1 | -1) => {
         if (isVoting) return;
 
+        // Force auth for voting
         const supabase = getSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 

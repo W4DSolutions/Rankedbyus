@@ -15,6 +15,15 @@ export function formatDate(dateString: string | Date) {
     });
 }
 
+export function slugify(text: string) {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 export function getLogoUrl(logoUrl: string | null | undefined, name: string, websiteUrl?: string | null) {
     // 1. Convert Clearbit to Google S2 (More reliable)
     if (logoUrl?.includes('logo.clearbit.com')) {

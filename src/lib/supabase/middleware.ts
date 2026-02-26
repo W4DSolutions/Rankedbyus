@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Protected Routes Check
-    const protectedRoutes = ['/profile', '/submit-tool']
+    const protectedRoutes = ['/submit-tool']
     const isProtected = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
     if (isProtected && !user) {

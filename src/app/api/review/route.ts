@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
-    console.log('Review API: POST request received');
     try {
         const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Authentication required to submit reviews' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
         const { item_id, rating, comment } = body as { item_id: string; rating: number; comment?: string };
 
@@ -14,28 +20,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid item_id or rating' }, { status: 400 });
         }
 
-        const cookieStore = await cookies();
-        let sessionId = cookieStore.get('rbu_session_id')?.value;
-
-        if (!sessionId) {
-            sessionId = crypto.randomUUID();
-            cookieStore.set('rbu_session_id', sessionId, {
-                maxAge: 60 * 60 * 24 * 365,
-                httpOnly: true,
-                path: '/',
-            });
-        }
-
-        const { data: { user } } = await supabase.auth.getUser();
-
         // Check if user already reviewed this tool
-        let checkQuery = supabase.from('reviews').select('*').eq('item_id', item_id);
-        if (user) {
-            checkQuery = checkQuery.eq('user_id', user.id);
-        } else {
-            checkQuery = checkQuery.eq('session_id', sessionId);
-        }
-        const { data: existingReview, error: checkError } = await checkQuery.maybeSingle();
+        const { data: existingReview, error: checkError } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('item_id', item_id)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
         if (checkError) {
             console.error('Check existing review error:', checkError);
@@ -46,13 +37,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Insert review (starts as pending)
-        console.log('Inserting review for item:', item_id, 'with rating:', rating, 'session:', sessionId, 'user_id', user?.id);
         const { error: insertError } = await supabase
             .from('reviews')
             .insert({
                 item_id,
-                session_id: sessionId as string,
-                user_id: user?.id || null,
+                user_id: user.id,
                 rating,
                 comment,
                 status: 'pending'

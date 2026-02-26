@@ -1,7 +1,5 @@
-
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -17,36 +15,19 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-
 export default async function ProfilePage() {
     const supabase = await createClient();
-    const cookieStore = await cookies();
-    const sessionId = cookieStore.get('rbu_session_id')?.value;
-
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Claim session history if user is logged in
-    if (user && sessionId) {
-        // Update instead of using rpc due to schema changes where items table has no session_id
-        await Promise.allSettled([
-            supabase.from('votes')
-                .update({ user_id: user.id })
-                .eq('session_id', sessionId)
-                .is('user_id', null),
-            supabase.from('reviews')
-                .update({ user_id: user.id })
-                .eq('session_id', sessionId)
-                .is('user_id', null)
-        ]);
-    }
-
-    // If user somehow bypasses middleware but isn't logged in, redirect them
+    // STRICT GUARD: No anonymous profile access
     if (!user) {
         redirect('/login?next=/profile');
     }
 
     // 1. Fetch Upvoted Items
-    let votesQuery = supabase.from('votes').select(`
+    const { data: votes, error: votesError } = await supabase
+        .from('votes')
+        .select(`
             item_id,
             value,
             created_at,
@@ -55,53 +36,51 @@ export default async function ProfilePage() {
                 categories (name, slug)
             )
         `)
+        .eq('user_id', user.id)
         .eq('value', 1)
         .order('created_at', { ascending: false });
 
-    if (user) {
-        votesQuery = votesQuery.eq('user_id', user.id);
-    } else if (sessionId) {
-        votesQuery = votesQuery.eq('session_id', sessionId);
-    }
-
-    const { data: votes, error: votesError } = await votesQuery;
     if (votesError) console.error("Profile page votes error:", votesError);
     const upvotedToolsRaw = votes?.map(v => v.items).filter(Boolean) as unknown as ItemWithDetails[] || [];
-    // Deduplicate items just in case the query returns multiple vote records for the same item
+    // Deduplicate
     const upvotedTools = Array.from(new Map(upvotedToolsRaw.map(item => [item.id, item])).values());
 
-    // 2. Fetch User Reviews
-    let reviewsQuery = supabase.from('reviews').select(`
+    // 2. Fetch User Reviews (Reviews written BY the user)
+    const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
             *,
             items (*)
         `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-    if (user) {
-        reviewsQuery = reviewsQuery.eq('user_id', user.id);
-    } else if (sessionId) {
-        reviewsQuery = reviewsQuery.eq('session_id', sessionId);
-    }
-
-    const { data: reviews, error: reviewsError } = await reviewsQuery;
     if (reviewsError) console.error("Profile page reviews error:", reviewsError);
 
     // 3. Fetch User Submissions
-    let submissionsQuery = supabase.from('items').select(`
+    const { data: submissions, error: submissionsError } = await supabase
+        .from('items')
+        .select(`
             *,
             categories (name, slug)
         `)
+        .or(`user_id.eq.${user.id},submitter_email.eq.${user.email}`)
         .order('created_at', { ascending: false });
 
-    if (user) {
-        submissionsQuery = submissionsQuery.eq('user_id', user.id);
-    } else {
-        // Items table currently does not track anonymous session submissions
-        submissionsQuery = submissionsQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-    }
-
-    const { data: submissions, error: submissionsError } = await submissionsQuery;
     if (submissionsError) console.error("Profile page submissions error:", submissionsError);
+
+    // 4. Fetch Reviews ON User's Tools (For Founder Replies)
+    const userToolIds = submissions?.map(s => s.id) || [];
+    const { data: receivedReviews, error: receivedError } = await supabase
+        .from('reviews')
+        .select(`
+            *,
+            items (name, slug, logo_url)
+        `)
+        .in('item_id', userToolIds)
+        .order('created_at', { ascending: false });
+
+    if (receivedError) console.error("Profile page received reviews error:", receivedError);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -126,15 +105,14 @@ export default async function ProfilePage() {
             </header>
 
             <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-
-
                 <ProfileView
-                    displayName={user ? (user.user_metadata?.full_name || 'Authenticated User') : 'Anonymous User'}
-                    displayIdentifier={user?.email || `Session: ${sessionId?.slice(0, 8)}...`}
-                    isAnonymous={!user}
+                    displayName={user.user_metadata?.full_name || 'Authenticated User'}
+                    displayIdentifier={user.email || 'Verified Member'}
+                    isAnonymous={false}
                     upvotedTools={upvotedTools as unknown as ItemWithDetails[] || []}
                     reviews={reviews as unknown as ReviewWithItem[] || []}
                     submissions={submissions as unknown as ItemWithDetails[] || []}
+                    receivedReviews={receivedReviews as unknown as ReviewWithItem[] || []}
                 />
             </main>
         </div>

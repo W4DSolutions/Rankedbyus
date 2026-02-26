@@ -33,6 +33,8 @@ export interface Item {
     payment_status?: 'unpaid' | 'paid' | 'refunded' | 'failed';
     transaction_id?: string;
     payment_amount?: number;
+    rejection_reason?: string | null;
+    last_status_change_at?: string;
     created_at: string;
 }
 
@@ -44,6 +46,8 @@ export interface Review {
     comment: string | null;
     status: ItemStatus;
     helpful_count?: number;
+    owner_reply?: string | null;
+    owner_reply_at?: string | null;
     created_at: string;
 }
 

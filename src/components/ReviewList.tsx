@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Review } from '@/types/models';
 import { StarRating } from '@/components/StarRating';
 import { ReviewHelpfulButton } from '@/components/ReviewHelpfulButton';
@@ -53,7 +53,7 @@ export function ReviewList({ reviews }: ReviewListProps) {
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-2 text-right">
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]" suppressHydrationWarning>
                                     {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase()}
                                 </div>
                                 <ReviewHelpfulButton

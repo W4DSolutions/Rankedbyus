@@ -56,12 +56,39 @@ export async function POST(request: NextRequest) {
 
         // Auto-assign Tags if they exist
         if (aiData.tags && aiData.tags.length > 0) {
-            // First clear existing tags for this item if needed, 
-            // or just insert new ones (ignoring duplicates)
+            const { slugify } = await import('@/lib/utils');
+
             for (const tagName of aiData.tags) {
-                // Simplified tag insertion logic
-                // In a robust system, you'd find/create tag then link in item_tags
-                // For now, we'll just focus on the description success
+                const tagSlug = slugify(tagName);
+
+                // 1. Find or create tag
+                const { data: tag, error: tagError } = await supabase
+                    .from('tags')
+                    .select('id')
+                    .eq('slug', tagSlug)
+                    .maybeSingle();
+
+                let tagId;
+                if (!tag) {
+                    const { data: newTag, error: createTagError } = await supabase
+                        .from('tags')
+                        .insert({ name: tagName, slug: tagSlug })
+                        .select('id')
+                        .single();
+
+                    if (!createTagError && newTag) {
+                        tagId = newTag.id;
+                    }
+                } else {
+                    tagId = tag.id;
+                }
+
+                // 2. Link tag to item
+                if (tagId) {
+                    await supabase
+                        .from('item_tags')
+                        .upsert({ item_id: itemId, tag_id: tagId }, { onConflict: 'item_id,tag_id' });
+                }
             }
         }
 

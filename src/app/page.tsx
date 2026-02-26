@@ -16,21 +16,18 @@ import {
   Globe,
   Rocket,
   ChevronRight,
+  ArrowRight,
   TrendingUp,
   Users,
   User,
   Layers,
   FolderOpen,
-  ArrowRight,
-  Zap,
   MessageSquare,
   Star,
   Sparkles,
   type LucideIcon
 } from "lucide-react";
-import { ItemWithDetails, Article, Item, ReviewWithItem } from "@/types/models";
-import Image from "next/image";
-import { getLogoUrl } from '@/lib/utils';
+import { ItemWithDetails } from "@/types/models";
 import { ToolIcon } from '@/components/ToolIcon';
 
 export const metadata: Metadata = {
@@ -77,14 +74,12 @@ export default async function Home() {
     .select('*', { count: 'exact', head: true });
 
   // Fetch top tools
-  const { data: trendingData } = await supabase
+  await supabase
     .from('items')
     .select('*, categories:category_id(name, slug), articles(*)')
     .eq('status', 'approved')
     .order('score', { ascending: false })
     .limit(4);
-
-  const trendingTools = (trendingData || []) as ItemWithDetails[];
 
   // Fetch recent reviews
   const { data: recentReviewsData } = await supabase

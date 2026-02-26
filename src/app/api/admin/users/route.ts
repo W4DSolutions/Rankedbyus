@@ -1,8 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { verifyAdmin } from "@/lib/auth-guards";
 
 export async function GET() {
     try {
+        const isAdmin = await verifyAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const supabase = createAdminClient();
 
         // 1. Get raw users from auth schema (requires service role with access to auth schema)

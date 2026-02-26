@@ -33,11 +33,18 @@ import { AdminUserList } from "@/components/AdminUserList";
 import { ToolIcon } from "@/components/ToolIcon";
 import { NewsletterDispatchButton } from "@/components/NewsletterDispatchButton";
 
+import { verifyAdmin } from "@/lib/auth-guards";
+import { redirect } from "next/navigation";
 
 // Force refresh
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
+        redirect("/admin/login");
+    }
+
     const supabase = createAdminClient();
 
     // Fetch pending submissions

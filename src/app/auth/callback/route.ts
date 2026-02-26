@@ -34,6 +34,14 @@ export async function GET(request: Request) {
                             .eq('session_id', sessionId)
                             .is('user_id', null)
                     ]);
+
+                    // Claim maker tools by email
+                    if (user.email) {
+                        await supabase.from('items')
+                            .update({ user_id: user.id })
+                            .eq('submitter_email', user.email)
+                            .is('user_id', null);
+                    }
                 }
             }
 

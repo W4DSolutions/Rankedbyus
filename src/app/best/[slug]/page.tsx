@@ -295,6 +295,66 @@ export default async function BestPage({
                     </div>
                 </div>
             </section>
+
+            {/* Structured Data for SEO */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "ItemList",
+                        "name": displayTitle,
+                        "description": `Audited collection of ${displayTitle.toLowerCase()} for 2026.`,
+                        "url": `https://rankedbyus.com/best/${slug}`,
+                        "numberOfItems": tools.length,
+                        "itemListElement": tools.map((tool, index) => ({
+                            "@type": "ListItem",
+                            "position": index + 1,
+                            "item": {
+                                "@type": "SoftwareApplication",
+                                "name": tool.name,
+                                "url": `https://rankedbyus.com/tool/${tool.slug}`,
+                                "description": tool.description,
+                                "applicationCategory": category.name,
+                                "aggregateRating": {
+                                    "@type": "AggregateRating",
+                                    "ratingValue": tool.average_rating || 0,
+                                    "reviewCount": tool.review_count || 1
+                                }
+                            }
+                        }))
+                    })
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Registry",
+                                "item": "https://rankedbyus.com"
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": category.name,
+                                "item": `https://rankedbyus.com/category/${category.slug}`
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 3,
+                                "name": displayTitle,
+                                "item": `https://rankedbyus.com/best/${slug}`
+                            }
+                        ]
+                    })
+                }}
+            />
         </div>
     );
 }

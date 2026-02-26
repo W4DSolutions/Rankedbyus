@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { generateArticleContent } from '@/lib/ai';
+import { verifyAdmin } from '@/lib/auth-guards';
 
 export async function POST(request: NextRequest) {
     try {
-        const supabase = await createClient();
-
-        // Simple auth check
-        const { data: { user } } = await supabase.auth.getUser();
-        // Add admin verification here if needed
+        const isAdmin = await verifyAdmin();
+        if (!isAdmin) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const body = await request.json();
         const { topic, linkedToolName } = body;

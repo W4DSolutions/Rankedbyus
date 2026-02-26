@@ -3,7 +3,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Star, MessageSquare, History, User, Rocket, PencilLine } from 'lucide-react';
+import {
+    Star,
+    MessageSquare,
+    History,
+    User,
+    Rocket,
+    PencilLine,
+    TrendingUp,
+    ShieldAlert,
+    CheckCircle2,
+    Reply
+} from 'lucide-react';
 import { ToolCard } from '@/components/ToolCard';
 import { ItemWithDetails, ReviewWithItem } from '@/types/models';
 import { cn } from '@/lib/utils';
@@ -17,15 +28,29 @@ interface ProfileViewProps {
     upvotedTools: ItemWithDetails[];
     reviews: ReviewWithItem[];
     submissions: ItemWithDetails[];
+    receivedReviews: ReviewWithItem[];
 }
 
-export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvotedTools, reviews, submissions }: ProfileViewProps) {
-    const [activeTab, setActiveTab] = useState<'upvoted' | 'reviews' | 'submissions'>('upvoted');
+export function ProfileView({
+    displayName,
+    displayIdentifier,
+    isAnonymous,
+    upvotedTools,
+    reviews,
+    submissions,
+    receivedReviews
+}: ProfileViewProps) {
+    const [activeTab, setActiveTab] = useState<'upvoted' | 'reviews' | 'submissions' | 'founder'>('upvoted');
     const [editingTool, setEditingTool] = useState<ItemWithDetails | null>(null);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [newDisplayName, setNewDisplayName] = useState(displayName);
     const [currentDisplayName, setCurrentDisplayName] = useState(displayName);
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // Reply state
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState('');
+    const [isSendingReply, setIsSendingReply] = useState(false);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,6 +70,28 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
             console.error('Failed to update profile:', error);
         } finally {
             setIsUpdating(false);
+        }
+    };
+
+    const handleSendReply = async (reviewId: string) => {
+        if (!replyText.trim()) return;
+        setIsSendingReply(true);
+        try {
+            const response = await fetch('/api/user/review-reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reviewId, reply: replyText }),
+            });
+            if (response.ok) {
+                setReplyingTo(null);
+                setReplyText('');
+                // Note: In a real app we'd refresh the data or update local state
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Failed to send reply:', error);
+        } finally {
+            setIsSendingReply(false);
         }
     };
 
@@ -112,42 +159,46 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                         </form>
                     )}
 
-                    <div className="grid grid-cols-3 gap-2 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <div className="grid grid-cols-2 gap-2 border-t border-slate-100 dark:border-slate-800 pt-6">
                         <button
                             onClick={() => setActiveTab('upvoted')}
                             className={cn(
-                                "p-2 rounded-xl transition-colors flex flex-col items-center",
-                                activeTab === 'upvoted' ? "bg-slate-50 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                "p-3 rounded-2xl transition-all flex flex-col items-center gap-1",
+                                activeTab === 'upvoted' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
                             )}
                         >
-                            <div className={cn("text-xl font-black", activeTab === 'upvoted' ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white")}>
-                                {upvotedTools.length}
-                            </div>
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Upvotes</div>
+                            <div className="text-lg font-black">{upvotedTools.length}</div>
+                            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Upvotes</div>
                         </button>
                         <button
                             onClick={() => setActiveTab('reviews')}
                             className={cn(
-                                "p-2 rounded-xl transition-colors flex flex-col items-center",
-                                activeTab === 'reviews' ? "bg-slate-50 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                "p-3 rounded-2xl transition-all flex flex-col items-center gap-1",
+                                activeTab === 'reviews' ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20" : "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
                             )}
                         >
-                            <div className={cn("text-xl font-black", activeTab === 'reviews' ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white")}>
-                                {reviews.length}
-                            </div>
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reviews</div>
+                            <div className="text-lg font-black">{reviews.length}</div>
+                            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Signals</div>
                         </button>
                         <button
                             onClick={() => setActiveTab('submissions')}
                             className={cn(
-                                "p-2 rounded-xl transition-colors flex flex-col items-center",
-                                activeTab === 'submissions' ? "bg-slate-50 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                "p-3 rounded-2xl transition-all flex flex-col items-center gap-1",
+                                activeTab === 'submissions' ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20" : "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
                             )}
                         >
-                            <div className={cn("text-xl font-black", activeTab === 'submissions' ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white")}>
-                                {submissions.length}
-                            </div>
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Added</div>
+                            <div className="text-lg font-black">{submissions.length}</div>
+                            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Assets</div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('founder')}
+                            className={cn(
+                                "p-3 rounded-2xl transition-all flex flex-col items-center gap-1",
+                                activeTab === 'founder' ? "bg-amber-600 text-white shadow-lg shadow-amber-500/20" : "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            <div className="text-lg font-black">{receivedReviews.length}</div>
+                            <div className="text-[9px] font-black uppercase tracking-widest opacity-80">Intel</div>
                         </button>
                     </div>
                 </div>
@@ -155,20 +206,17 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                 <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 p-6 hidden lg:block">
                     <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
                         <History size={14} />
-                        Recent Upvotes
+                        Identity Reputation
                     </h3>
                     <div className="space-y-4">
-                        {upvotedTools.slice(0, 5).map((tool) => (
-                            <div key={tool.id} className="text-sm border-b border-slate-200 dark:border-slate-700/50 pb-2 last:border-0 last:pb-0">
-                                <Link href={`/tool/${tool.slug}`} className="font-bold text-slate-900 dark:text-white hover:underline flex items-center gap-2">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                                    {tool.name}
-                                </Link>
-                            </div>
-                        ))}
-                        {upvotedTools.length === 0 && (
-                            <p className="text-sm text-slate-400 italic">No activity yet.</p>
-                        )}
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-bold uppercase tracking-tight">Status</span>
+                            <span className="text-blue-600 font-black uppercase">Verified Auditor</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-bold uppercase tracking-tight">Active Since</span>
+                            <span className="text-slate-900 dark:text-white font-black">2026.02</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -177,13 +225,11 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
             <div className="lg:col-span-8">
                 {activeTab === 'upvoted' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                                    <Star size={20} className="fill-current" />
-                                </div>
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Endorsed Assets</h2>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                <Star size={20} className="fill-current" />
                             </div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Endorsed Assets</h2>
                         </div>
 
                         {upvotedTools.length > 0 ? (
@@ -202,9 +248,9 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                                 <div className="mx-auto h-16 w-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4">
                                     <Star size={32} />
                                 </div>
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Profile Inactive</h3>
-                                <p className="mt-2 text-slate-500 font-medium mb-6">Your tactical profile is empty. Start curating your registry to build your reputation.</p>
-                                <Link href="/search" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase tracking-widest hover:opacity-90 transition-opacity">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">No Endorsements</h3>
+                                <p className="mt-2 text-slate-500 font-medium mb-6">Your tactical profile is empty. Signal your support for industry leaders.</p>
+                                <Link href="/" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase tracking-widest hover:opacity-90 transition-opacity">
                                     Explore Registry
                                 </Link>
                             </div>
@@ -214,11 +260,11 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
 
                 {activeTab === 'reviews' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600">
                                 <MessageSquare size={20} />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">My Signals</h2>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Market Signals</h2>
                         </div>
 
                         {reviews.length > 0 ? (
@@ -265,11 +311,22 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                                                 {review.status}
                                             </span>
                                         </div>
-                                        <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                                        <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700 mb-4">
                                             <p className="text-slate-600 dark:text-slate-300 text-sm italic font-medium">
                                                 "{review.comment}"
                                             </p>
                                         </div>
+                                        {review.owner_reply && (
+                                            <div className="mt-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50">
+                                                <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
+                                                    <Reply size={14} className="rotate-180" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Founder Response</span>
+                                                </div>
+                                                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                                    {review.owner_reply}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -278,8 +335,8 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                                 <div className="mx-auto h-16 w-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4">
                                     <MessageSquare size={32} />
                                 </div>
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">No Signals</h3>
-                                <p className="mt-2 text-slate-500 font-medium mb-6">You haven't submitted any reviews yet.</p>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">No Audit Signals</h3>
+                                <p className="mt-2 text-slate-500 font-medium">You haven't submitted any tactical reviews yet.</p>
                             </div>
                         )}
                     </div>
@@ -287,60 +344,88 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
 
                 {activeTab === 'submissions' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
                                 <Rocket size={20} />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Submitted Assets</h2>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Strategic Assets</h2>
                         </div>
 
                         {submissions.length > 0 ? (
                             <div className="space-y-4">
                                 {submissions.map((tool) => (
-                                    <div key={tool.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-sm group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-14 w-14 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 p-2">
+                                    <div key={tool.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm group">
+                                        <div className="flex flex-col md:flex-row md:items-center gap-6">
+                                            <div className="h-20 w-20 rounded-2xl bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center p-4 shadow-sm group-hover:scale-105 transition-transform duration-500">
                                                 <ToolIcon
                                                     url={tool.logo_url}
                                                     name={tool.name}
                                                     websiteUrl={tool.website_url}
-                                                    width={48}
-                                                    height={48}
+                                                    width={64}
+                                                    height={64}
                                                     className="w-full h-full object-contain"
                                                 />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-4 mb-1">
-                                                    <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{tool.name}</h3>
-                                                    <span className={cn(
-                                                        "text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border whitespace-nowrap",
-                                                        tool.status === 'approved'
-                                                            ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                                                            : tool.status === 'pending'
-                                                                ? "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800"
-                                                                : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-                                                    )}>
-                                                        {tool.status}
-                                                    </span>
+                                                <div className="flex flex-wrap items-center justify-between gap-4 mb-2">
+                                                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">{tool.name}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        {tool.status === 'rejected' && (
+                                                            <div className="group/reason relative">
+                                                                <ShieldAlert size={16} className="text-red-500 animate-pulse cursor-help" />
+                                                                <div className="absolute bottom-full right-0 mb-2 w-64 p-3 rounded-xl bg-slate-900 text-white text-[10px] font-medium opacity-0 group-hover/reason:opacity-100 transition-opacity pointer-events-none z-20 shadow-xl border border-white/10">
+                                                                    <div className="font-black uppercase mb-1 text-red-400">Audit Problem Found:</div>
+                                                                    {tool.rejection_reason || 'Asset did not meet technical verification standards.'}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <span className={cn(
+                                                            "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border",
+                                                            tool.status === 'approved'
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                                                                : tool.status === 'pending'
+                                                                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                                                                    : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                                                        )}>
+                                                            {tool.status}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-slate-500 truncate mb-3">{tool.website_url}</div>
 
-                                                <div className="flex items-center gap-2 mt-auto">
+                                                <div className="flex flex-wrap items-center gap-6 mt-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Visibility Intensity</span>
+                                                        <div className="flex items-center gap-1.5 text-sm font-black text-slate-900 dark:text-white">
+                                                            <TrendingUp size={14} className="text-emerald-500" />
+                                                            {tool.click_count || 0} Pulse
+                                                        </div>
+                                                    </div>
+                                                    <div className="h-6 w-px bg-slate-100 dark:bg-slate-800" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Intelligence Rank</span>
+                                                        <div className="text-sm font-black text-slate-900 dark:text-white">#{tool.score} Alpha</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 mt-6">
                                                     <Link
-                                                        href={`/tool/${tool.slug}`}
-                                                        className="text-[10px] uppercase font-black tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                        href={tool.status === 'approved' ? `/tool/${tool.slug}` : '#'}
+                                                        className={cn(
+                                                            "text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all",
+                                                            tool.status === 'approved'
+                                                                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-900 dark:hover:bg-blue-600 hover:text-white"
+                                                                : "bg-slate-50 dark:bg-slate-900 text-slate-300 dark:text-slate-700 pointer-events-none"
+                                                        )}
                                                     >
-                                                        View Page
+                                                        Live View
                                                     </Link>
-                                                    {!isAnonymous && (
-                                                        <button
-                                                            onClick={() => setEditingTool(tool)}
-                                                            className="flex items-center gap-1.5 text-[10px] uppercase font-black tracking-widest bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                                                        >
-                                                            <PencilLine size={12} />
-                                                            Edit Data
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={() => setEditingTool(tool)}
+                                                        className="flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 px-4 py-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all"
+                                                    >
+                                                        <PencilLine size={14} />
+                                                        Update Asset
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -352,21 +437,166 @@ export function ProfileView({ displayName, displayIdentifier, isAnonymous, upvot
                                 <div className="mx-auto h-16 w-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4">
                                     <Rocket size={32} />
                                 </div>
-                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">No Submissions</h3>
-                                <p className="mt-2 text-slate-500 font-medium mb-6">You haven't submitted any tools yet.</p>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Registry Empty</h3>
+                                <p className="mt-2 text-slate-500 font-medium mb-6">Deploy your first technical asset to the RankedByUs registry.</p>
+                                <Link href="/#categories" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-500/20">
+                                    Start Submission
+                                </Link>
                             </div>
                         )}
                     </div>
                 )}
-            </div>
 
-            {/* Modals */}
-            {editingTool && (
-                <EditUserToolModal
-                    tool={editingTool}
-                    onClose={() => setEditingTool(null)}
-                />
-            )}
+                {activeTab === 'founder' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-slate-100 dark:border-slate-800 pb-8">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                                        <ShieldAlert size={20} />
+                                    </div>
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Founder Intelligence</h2>
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium">Community feedback stream for your deployed assets.</p>
+                            </div>
+                            <div className="flex items-center gap-6 px-6 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="text-center">
+                                    <div className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">{receivedReviews.length}</div>
+                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Inbound Signals</div>
+                                </div>
+                                <div className="h-8 w-px bg-slate-100 dark:bg-slate-800" />
+                                <div className="text-center">
+                                    <div className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">
+                                        {receivedReviews.filter(r => r.owner_reply).length}
+                                    </div>
+                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Responses</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {receivedReviews.length > 0 ? (
+                            <div className="space-y-6">
+                                {receivedReviews.map((review) => (
+                                    <div key={review.id} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm group">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-lg bg-slate-50 dark:bg-slate-800 p-1 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+                                                    <ToolIcon
+                                                        url={review.items.logo_url}
+                                                        name={review.items.name}
+                                                        websiteUrl=""
+                                                        width={32}
+                                                        height={32}
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Target Asset</div>
+                                                    <div className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">{review.items.name}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                {Array.from({ length: 5 }).map((_, i) => (
+                                                    <Star
+                                                        key={i}
+                                                        size={14}
+                                                        className={cn(
+                                                            i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-slate-100 dark:text-slate-800"
+                                                        )}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-6">
+                                            <div className="flex-1">
+                                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/50 relative">
+                                                    <MessageSquare size={16} className="absolute -left-2 -top-2 text-slate-200 dark:text-slate-800" />
+                                                    <p className="text-sm text-slate-600 dark:text-slate-400 font-medium italic leading-relaxed">
+                                                        "{review.comment}"
+                                                    </p>
+                                                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-900 flex items-center gap-2">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Auditor clearance Level 1</span>
+                                                        <span className="h-1 w-1 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{new Date(review.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+
+                                                {review.owner_reply ? (
+                                                    <div className="mt-6 ml-8 p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
+                                                        <div className="flex items-center gap-2 mb-3 text-blue-600 dark:text-blue-400">
+                                                            <Reply size={16} className="rotate-180" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">Your Tactical Response</span>
+                                                        </div>
+                                                        <p className="text-sm text-slate-700 dark:text-slate-300 font-black italic">
+                                                            {review.owner_reply}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="mt-4 pl-8">
+                                                        {replyingTo === review.id ? (
+                                                            <div className="animate-in slide-in-from-top-2 duration-300">
+                                                                <textarea
+                                                                    autoFocus
+                                                                    value={replyText}
+                                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                                    placeholder="Enter your tactical response to this auditor..."
+                                                                    className="w-full rounded-2xl border-2 border-blue-100 dark:border-blue-900/40 bg-white dark:bg-slate-900 p-4 text-sm font-medium focus:border-blue-500 focus:outline-none transition-all resize-none shadow-xl"
+                                                                    rows={3}
+                                                                />
+                                                                <div className="flex justify-end gap-3 mt-3">
+                                                                    <button
+                                                                        onClick={() => setReplyingTo(null)}
+                                                                        disabled={isSendingReply}
+                                                                        className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+                                                                    >
+                                                                        Abort
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleSendReply(review.id)}
+                                                                        disabled={isSendingReply || !replyText.trim()}
+                                                                        className="rounded-xl bg-blue-600 px-6 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+                                                                    >
+                                                                        {isSendingReply ? 'Broadcasting...' : 'Deploy Response'}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => setReplyingTo(review.id)}
+                                                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
+                                                            >
+                                                                <Reply size={14} className="rotate-180" />
+                                                                Issue Response
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-16 text-center">
+                                <div className="mx-auto h-16 w-16 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-4">
+                                    <TrendingUp size={32} />
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Intelligence Silence</h3>
+                                <p className="mt-2 text-slate-500 font-medium">No community signals have been intercepted for your assets yet.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Modals */}
+                {editingTool && (
+                    <EditUserToolModal
+                        tool={editingTool}
+                        onClose={() => setEditingTool(null)}
+                    />
+                )}
+            </div>
         </div>
     );
 }

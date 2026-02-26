@@ -12,11 +12,14 @@ interface ShareButtonsProps {
 
 export function ShareButtons({ url, title, className }: ShareButtonsProps) {
     const [copied, setCopied] = useState(false);
-    const [shareUrl, setShareUrl] = useState(url);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        setShareUrl(`${window.location.origin}${url}`);
-    }, [url]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMounted(true);
+    }, []);
+
+    const shareUrl = isMounted ? `${window.location.origin}${url}` : url;
 
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedTitle = encodeURIComponent(title);
@@ -58,8 +61,8 @@ export function ShareButtons({ url, title, className }: ShareButtonsProps) {
     return (
         <div className={cn("flex items-center gap-3", className)}>
             <div className="flex -space-x-1">
-                {/* Native Share Trigger (Only if supported) */}
-                {typeof navigator !== 'undefined' && 'share' in navigator && (
+                {/* Native Share Trigger (Only if supported and mounted) */}
+                {isMounted && typeof navigator !== 'undefined' && 'share' in navigator && (
                     <button
                         onClick={handleNativeShare}
                         className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white border border-blue-500 shadow-lg shadow-blue-500/20 z-10 hover:scale-110 transition-all"
