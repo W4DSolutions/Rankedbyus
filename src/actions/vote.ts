@@ -109,7 +109,6 @@ export async function submitVote(input: VoteInput) {
                 .update({
                     value,
                     user_id: user?.id || existingVote.user_id,
-                    ip_address: ipAddress,
                     session_id: sessionId || existingVote.session_id
                 })
                 .eq('id', existingVote.id);
@@ -126,8 +125,6 @@ export async function submitVote(input: VoteInput) {
                     item_id,
                     user_id: user?.id || null,
                     session_id: sessionId || null,
-                    ip_address: ipAddress,
-                    user_agent: userAgent,
                     value
                 });
 
@@ -149,9 +146,11 @@ export async function submitVote(input: VoteInput) {
         try {
             await adminSupabase.from('vote_audit_logs').insert({
                 item_id,
-                user_id: user.id,
+                user_id: user?.id,
                 action: value === null ? 'cancel' : value === 1 ? 'upvote' : 'downvote',
-                ip_address: ipAddress || 'unknown'
+                ip_address: ipAddress || 'unknown',
+                user_agent: userAgent,
+                session_id: sessionId || 'unknown'
             });
         } catch (e) {
             console.warn('Audit Logging skipped:', e);
