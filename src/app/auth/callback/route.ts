@@ -23,19 +23,57 @@ export async function GET(request: Request) {
             if (sessionId) {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    // Update instead of using rpc due to schema changes where items table has no session_id
-                    await Promise.allSettled([
-                        supabase.from('votes')
-                            .update({ user_id: user.id })
-                            .eq('session_id', sessionId)
-                            .is('user_id', null),
-                        supabase.from('reviews')
-                            .update({ user_id: user.id })
-                            .eq('session_id', sessionId)
-                            .is('user_id', null)
-                    ]);
+                    // 1. Claim Votes (Handle potential duplicates)
+                    // Get all anonymous votes for this session
+                    const { data: anonVotes } = await supabase.from('votes')
+                        .select('item_id, value, id')
+                        .eq('session_id', sessionId)
+                        .is('user_id', null);
 
-                    // Claim maker tools by email
+                    if (anonVotes && anonVotes.length > 0) {
+                        for (const vote of anonVotes) {
+                            // Check if user already has an authenticated vote for this item
+                            const { data: authVote } = await supabase.from('votes')
+                                .select('id')
+                                .eq('item_id', vote.item_id)
+                                .eq('user_id', user.id)
+                                .maybeSingle();
+
+                            if (authVote) {
+                                // Conflict: User already voted while logged in. 
+                                // Priority goes to AUTH vote. Delete the anonymous one.
+                                await supabase.from('votes').delete().eq('id', vote.id);
+                            } else {
+                                // No conflict: Claim the anonymous vote.
+                                await supabase.from('votes').update({ user_id: user.id }).eq('id', vote.id);
+                            }
+                        }
+                    }
+
+                    // 2. Claim Reviews (Handle potential duplicates)
+                    const { data: anonReviews } = await supabase.from('reviews')
+                        .select('item_id, id')
+                        .eq('session_id', sessionId)
+                        .is('user_id', null);
+
+                    if (anonReviews && anonReviews.length > 0) {
+                        for (const review of anonReviews) {
+                            const { data: authReview } = await supabase.from('reviews')
+                                .select('id')
+                                .eq('item_id', review.item_id)
+                                .eq('user_id', user.id)
+                                .maybeSingle();
+
+                            if (authReview) {
+                                // Conflict: Delete anon review.
+                                await supabase.from('reviews').delete().eq('id', review.id);
+                            } else {
+                                await supabase.from('reviews').update({ user_id: user.id }).eq('id', review.id);
+                            }
+                        }
+                    }
+
+                    // 3. Claim Maker tools by email
                     if (user.email) {
                         await supabase.from('items')
                             .update({ user_id: user.id })

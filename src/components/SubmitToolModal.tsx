@@ -29,6 +29,9 @@ interface SubmitToolModalProps {
     children?: React.ReactNode;
 }
 
+import { submitTool } from '@/actions/tool';
+import { getCategories } from '@/actions/categories';
+
 export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,13 +55,10 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
     const fetchCategories = useCallback(async () => {
         setIsLoadingCategories(true);
         try {
-            const response = await fetch('/api/categories');
-            if (response.ok) {
-                const data = await response.json();
-                setCategories(data.categories || []);
-                if (data.categories?.length > 0) {
-                    setFormData(prev => ({ ...prev, category: data.categories[0].slug }));
-                }
+            const data = await getCategories();
+            setCategories(data.categories || []);
+            if (data.categories && data.categories.length > 0) {
+                setFormData(prev => ({ ...prev, category: data.categories[0].slug }));
             }
         } catch (error) {
             console.error('Failed to fetch categories:', error);
@@ -126,7 +126,8 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
     };
 
     const handleSubmit = async (txId?: string) => {
-        if (!validateForm()) { // Should be valid already, but re-checked
+        const currentOrderId = txId || transactionId;
+        if (!validateForm() || !currentOrderId) {
             return;
         }
 
@@ -135,31 +136,28 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
         setErrorMessage('');
 
         try {
-            const payload = {
+            const result = await submitTool({
                 ...formData,
-                orderId: txId || transactionId,
-            };
-
-            const response = await fetch('/api/submit-tool', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
+                orderId: currentOrderId,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Submission failed');
+            if ('error' in result) {
+                throw new Error(result.error);
             }
 
             setSubmitStatus('success');
             setTimeout(() => {
                 setIsOpen(false);
-                setFormData({ name: '', website_url: '', description: '', category: categories[0]?.slug || '', logo_url: '', submitter_email: '' });
+                setFormData({
+                    name: '',
+                    website_url: '',
+                    description: '',
+                    category: categories[0]?.slug || '',
+                    logo_url: '',
+                    submitter_email: ''
+                });
                 setStep('form');
-                setTransactionId(null); // Explicit reset
+                setTransactionId(null);
                 setSubmitStatus('idle');
                 setFormErrors({});
             }, 2000);

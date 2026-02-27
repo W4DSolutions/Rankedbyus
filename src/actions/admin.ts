@@ -1,26 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
+'use server';
+
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ItemStatus } from '@/types/models';
 import { sendEmail } from '@/lib/email';
-
 import { verifyAdmin } from '@/lib/auth-guards';
+import { revalidatePath } from 'next/cache';
 
-export async function POST(request: NextRequest) {
+export async function processAdminToolAction(id: string, action: 'approve' | 'reject', tags?: string[]) {
     // Auth Guard
     const isAdmin = await verifyAdmin();
     if (!isAdmin) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return { error: 'Unauthorized', status: 401 };
     }
 
     try {
-        const body = (await request.json()) as { id: string; action: string; tags?: string[] };
-        const { id, action } = body;
-
         if (!id || !['approve', 'reject'].includes(action)) {
-            return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+            return { error: 'Invalid parameters', status: 400 };
         }
 
-        const supabase = createAdminClient() as any;
+        const supabase = createAdminClient();
         const status = (action === 'approve' ? 'approved' : 'rejected') as ItemStatus;
 
         const { error } = await supabase
@@ -30,17 +28,17 @@ export async function POST(request: NextRequest) {
 
         if (error) {
             console.error('Admin tool action error:', error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            return { error: error.message, status: 500 };
         }
 
-        if (status === 'approved' && body.tags && Array.isArray(body.tags)) {
-            const tagInserts = body.tags.map((tagId: string) => ({
+        if (status === 'approved' && tags && Array.isArray(tags)) {
+            const tagInserts = tags.map((tagId: string) => ({
                 item_id: id,
                 tag_id: tagId
             }));
 
             if (tagInserts.length > 0) {
-                // Remove existing tags first to be safe (though for pending items usually none)
+                // Remove existing tags first
                 await supabase.from('item_tags').delete().eq('item_id', id);
 
                 const { error: tagError } = await supabase
@@ -49,7 +47,6 @@ export async function POST(request: NextRequest) {
 
                 if (tagError) {
                     console.error('Error adding tags:', tagError);
-                    // Don't fail the whole request, but log it
                 }
             }
         }
@@ -79,9 +76,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ success: true, status });
+        revalidatePath('/admin');
+        revalidatePath('/'); // Revalidate home in case it was a new approval
+        revalidatePath(`/tool/${item?.name.toLowerCase().replace(/\s+/g, '-')}`); // Revalidate tool page
+
+        return { success: true, status };
     } catch (error) {
-        console.error('API Error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('Admin action processing error:', error);
+        return { error: 'Internal server error', status: 500 };
     }
 }

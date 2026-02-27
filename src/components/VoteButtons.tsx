@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+import { submitVote, getUserVote } from '@/actions/vote';
+
 interface VoteButtonsProps {
     itemId: string;
     initialScore: number;
@@ -21,32 +23,31 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
     const [userVote, setUserVote] = useState<1 | -1 | null>(null);
     const [isVoting, setIsVoting] = useState(false);
 
+    // Sync state with props during render phase to avoid cascading renders
+    const [prevInitial, setPrevInitial] = useState({ score: initialScore, count: initialVoteCount });
+    if (initialScore !== prevInitial.score || initialVoteCount !== prevInitial.count) {
+        setPrevInitial({ score: initialScore, count: initialVoteCount });
+        setScore(initialScore);
+        setVoteCount(initialVoteCount);
+    }
+
     useEffect(() => {
-        const fetchUserVote = async () => {
+        const fetchUserStatus = async () => {
             try {
-                const response = await fetch(`/api/vote?item_id=${itemId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setUserVote(data.user_vote);
-                }
+                const data = await getUserVote(itemId);
+                setUserVote(data.user_vote as 1 | -1 | null);
             } catch (error) {
                 console.error('Error fetching user vote:', error);
             }
         };
 
-        fetchUserVote();
+        fetchUserStatus();
     }, [itemId]);
-
-    // Keep state in sync with props
-    useEffect(() => {
-        setScore(initialScore);
-        setVoteCount(initialVoteCount);
-    }, [initialScore, initialVoteCount]);
 
     const handleVote = async (value: 1 | -1) => {
         if (isVoting) return;
 
-        // Force auth for voting
+        // Force auth for voting (Client-side check)
         const supabase = getSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -59,49 +60,43 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
         const wasVoted = userVote === value;
         const newVote = wasVoted ? null : value;
 
-        // Simple optimistic score calculation (ignoring complex trending bonus for UI smoothness)
         const scoreDelta = wasVoted ? -value : (userVote ? value - userVote : value);
         const countDelta = wasVoted ? -1 : (userVote ? 0 : 1);
 
-        setScore((prev) => prev + scoreDelta);
-        setVoteCount((prev) => prev + countDelta);
-        onVoteChange?.(score + scoreDelta, voteCount + countDelta);
+        const optimisticScore = score + scoreDelta;
+        const optimisticCount = voteCount + countDelta;
+
+        setScore(optimisticScore);
+        setVoteCount(optimisticCount);
+        onVoteChange?.(optimisticScore, optimisticCount);
         setUserVote(newVote);
         setIsVoting(true);
 
         try {
-            const response = await fetch('/api/vote', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    item_id: itemId,
-                    value: newVote,
-                }),
+            const result = await submitVote({
+                item_id: itemId,
+                value: newVote as 1 | -1 | null,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Vote failed');
+            if ('error' in result) {
+                throw new Error(result.error);
             }
 
-            // Update with actual server response
-            if (data.new_score !== undefined && data.vote_count !== undefined) {
-                setScore(data.new_score);
-                setVoteCount(data.vote_count);
-                onVoteChange?.(data.new_score, data.vote_count);
+            // Update with actual server truth
+            if (result.new_score !== undefined && result.vote_count !== undefined) {
+                setScore(result.new_score);
+                setVoteCount(result.vote_count);
+                onVoteChange?.(result.new_score, result.vote_count);
             }
-            // Force a refresh to update everything else (sidebar, trending lists)
+
             router.refresh();
         } catch (error: any) {
-            // Revert optimistic update on error
-            setScore((prev) => prev - scoreDelta);
-            setVoteCount((prev) => prev - countDelta);
+            // Revert
+            setScore(score);
+            setVoteCount(voteCount);
+            setUserVote(userVote);
             onVoteChange?.(score, voteCount);
             alert(`Signal Failure: ${error.message || 'The registry could not ingest your vote.'}`);
-            console.error('Vote error:', error);
         } finally {
             setIsVoting(false);
         }

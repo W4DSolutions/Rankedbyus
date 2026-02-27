@@ -3,6 +3,8 @@
 
 import { useEffect, useRef } from 'react';
 
+import { trackArticleView } from '@/actions/article';
+
 export function ViewTracker({ articleId }: { articleId: string }) {
     const tracked = useRef(false);
 
@@ -11,14 +13,10 @@ export function ViewTracker({ articleId }: { articleId: string }) {
 
         const trackView = async () => {
             try {
-                await fetch('/api/article/view', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ articleId }),
-                });
+                await trackArticleView(articleId);
             } catch (err) {
                 // Silently fail for tracking errors
-                console.error('Failed to diverse view count', err);
+                console.error('Failed to track view', err);
             }
         };
 

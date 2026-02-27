@@ -12,6 +12,8 @@ interface EditUserToolModalProps {
     onClose: () => void;
 }
 
+import { updateTool } from '@/actions/tool';
+
 export function EditUserToolModal({ tool, onClose }: EditUserToolModalProps) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,19 +35,10 @@ export function EditUserToolModal({ tool, onClose }: EditUserToolModalProps) {
         setSubmitStatus('idle');
 
         try {
-            const response = await fetch('/api/user/tool', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id: tool.id,
-                    ...formData
-                }),
-            });
+            const result = await updateTool(tool.id, formData);
 
-            if (!response.ok) {
-                throw new Error('Failed to update listing');
+            if (!('success' in result)) {
+                throw new Error(result.error || 'Failed to update listing');
             }
 
             setSubmitStatus('success');

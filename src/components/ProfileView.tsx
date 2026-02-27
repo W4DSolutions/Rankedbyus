@@ -31,6 +31,8 @@ interface ProfileViewProps {
     reputationScore?: number;
 }
 
+import { updateProfile, replyToReview } from '@/actions/user';
+
 export function ProfileView({
     displayName,
     displayIdentifier,
@@ -57,14 +59,9 @@ export function ProfileView({
         e.preventDefault();
         setIsUpdating(true);
         try {
-            const response = await fetch('/api/user/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ displayName: newDisplayName }),
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setCurrentDisplayName(data.displayName);
+            const result = await updateProfile(newDisplayName);
+            if ('displayName' in result && result.displayName) {
+                setCurrentDisplayName(result.displayName);
                 setIsEditingProfile(false);
             }
         } catch (error) {
@@ -78,15 +75,11 @@ export function ProfileView({
         if (!replyText.trim()) return;
         setIsSendingReply(true);
         try {
-            const response = await fetch('/api/user/review-reply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reviewId, reply: replyText }),
-            });
-            if (response.ok) {
+            const result = await replyToReview(reviewId, replyText);
+            if ('success' in result) {
                 setReplyingTo(null);
                 setReplyText('');
-                // Note: In a real app we'd refresh the data or update local state
+                // Data will be refreshed by revalidatePath in action
                 window.location.reload();
             }
         } catch (error) {

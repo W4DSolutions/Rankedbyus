@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Send, Sparkles, CheckCircle2 } from 'lucide-react';
+import { subscribeToNewsletter } from '@/actions/newsletter';
 
 export function NewsletterSection() {
     const [email, setEmail] = useState('');
@@ -14,25 +15,19 @@ export function NewsletterSection() {
         setStatus('loading');
 
         try {
-            const res = await fetch('/api/newsletter/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
+            const result = await subscribeToNewsletter(email);
 
-            const data = await res.json();
-
-            if (res.ok) {
+            if ('error' in result) {
+                setStatus('error');
+                setMessage(result.error || 'Something went wrong. Try again?');
+            } else {
                 setStatus('success');
                 setMessage('Welcome to the elite rank! Check your inbox soon.');
                 setEmail('');
-            } else {
-                setStatus('error');
-                setMessage(data.error || 'Something went wrong. Try again?');
             }
         } catch {
             setStatus('error');
-            setMessage('Network error. Please try again.');
+            setMessage('Signal transmission failed. Please try again.');
         }
     };
 

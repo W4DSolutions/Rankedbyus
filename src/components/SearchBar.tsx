@@ -7,6 +7,8 @@ import { Search, Loader2, Star } from 'lucide-react';
 import { ItemWithDetails } from '@/types/models';
 import { ToolIcon } from '@/components/ToolIcon';
 
+import { searchTools } from '@/actions/search';
+
 function SearchBarContent() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<ItemWithDetails[]>([]);
@@ -34,9 +36,8 @@ function SearchBarContent() {
     useEffect(() => {
         const fetchPopular = async () => {
             try {
-                const response = await fetch('/api/search?limit=5'); // Fetch top 5 if no Q
-                const data = await response.json();
-                if (data.results) setPopularTools(data.results);
+                const data = await searchTools('', 5);
+                if (data.results) setPopularTools(data.results as ItemWithDetails[]);
             } catch (err) {
                 console.error("Pre-fetch error:", err);
             }
@@ -61,14 +62,12 @@ function SearchBarContent() {
                 setResults([]);
                 setShowDropdown(false);
 
-                // If on search page and cleared, reset results
                 if (pathname === '/search' && query === '') {
                     router.push('/search', { scroll: false });
                 }
                 return;
             }
 
-            // 8.3 Registry Performance: Live update if on search page
             if (pathname === '/search') {
                 const params = new URLSearchParams(searchParams.toString());
                 params.set('q', query);
@@ -77,11 +76,9 @@ function SearchBarContent() {
 
             setIsSearching(true);
             try {
-                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
+                const data = await searchTools(query);
                 if (data.results) {
-                    setResults(data.results);
-                    // Only show dropdown if NOT on search page (avoid double results)
+                    setResults(data.results as ItemWithDetails[]);
                     if (pathname !== '/search') {
                         setShowDropdown(true);
                     }

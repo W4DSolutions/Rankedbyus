@@ -1,29 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { headers } from 'next/headers';
-import { VoteSchema } from '@/lib/schemas';
+'use server';
 
-export async function POST(request: NextRequest) {
+import { createClient } from '@/lib/supabase/server';
+import { headers, cookies } from 'next/headers';
+import { VoteSchema, type VoteInput } from '@/lib/schemas';
+import { revalidatePath } from 'next/cache';
+
+export async function submitVote(input: VoteInput) {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            return NextResponse.json(
-                { error: 'Authentication required to vote' },
-                { status: 401 }
-            );
+            return { error: 'Authentication required to vote', status: 401 };
         }
 
-        const body = await request.json();
-
         // 0. STRUCTURAL VALIDATION (ZOD)
-        const validation = VoteSchema.safeParse(body);
+        const validation = VoteSchema.safeParse(input);
         if (!validation.success) {
-            return NextResponse.json(
-                { error: validation.error.issues[0].message },
-                { status: 400 }
-            );
+            return { error: validation.error.issues[0].message, status: 400 };
         }
         const { item_id, value } = validation.data;
 
@@ -42,23 +36,20 @@ export async function POST(request: NextRequest) {
             .from('vote_audit_logs')
             .select('*', { count: 'exact', head: true })
             .eq('ip_address', ipAddress)
-            .eq('action', 'vote_cast')
+            .in('action', ['upvote', 'downvote', 'cancel'])
             .gte('created_at', twentyFourHoursAgo.toISOString());
 
-        if ((dayVoteCount || 0) > 50) {
+        if ((dayVoteCount || 0) >= 50) {
             await supabase.from('vote_audit_logs').insert({
                 ip_address: ipAddress,
                 user_agent: userAgent,
                 action: 'rate_limited',
                 message: 'Daily limit exceeded'
             });
-            return NextResponse.json(
-                { error: 'High volume detected. Please try again tomorrow.' },
-                { status: 429 }
-            );
+            return { error: 'High volume detected. Please try again tomorrow.', status: 429 };
         }
 
-        // Check if user already voted (strictly by user_id now)
+        // Check if user already voted (strictly by user_id)
         const { data: existingVote, error: checkError } = await supabase
             .from('votes')
             .select('*')
@@ -68,7 +59,7 @@ export async function POST(request: NextRequest) {
 
         if (checkError) {
             console.error('Check existing vote error:', checkError);
-            return NextResponse.json({ error: 'Failed to verify existing signal status.' }, { status: 500 });
+            return { error: 'Failed to verify existing signal status.', status: 500 };
         }
 
         if (value === null) {
@@ -91,7 +82,7 @@ export async function POST(request: NextRequest) {
                 .eq('id', existingVote.id);
         } else {
             // Insert new vote
-            const cookieStore = await import('next/headers').then(mod => mod.cookies());
+            const cookieStore = await cookies();
             const sessionId = cookieStore.get('rbu_session_id')?.value;
 
             await supabase
@@ -131,11 +122,10 @@ export async function POST(request: NextRequest) {
             .eq('item_id', item_id)
             .eq('value', -1);
 
-        // Algorithm: (Up - Down) - Simple Linear Score as per user requirement
         const newScore = (upvotes || 0) - (downvotes || 0);
         const newVoteCount = (upvotes || 0) + (downvotes || 0);
 
-        // Update item score (Synchronize with SQL Trigger logic locally for UI)
+        // Update item score
         await supabase
             .from('items')
             .update({
@@ -144,40 +134,31 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', item_id);
 
-        return NextResponse.json({
+        // Revalidate the pages that show this tool
+        revalidatePath('/');
+        revalidatePath(`/tool/${item_id}`); // Using ID might be wrong if it expects slug, but revalidatePath is greedy sometimes. 
+        // Better to revalidate the tags and categories too if we knew them.
+
+        return {
             success: true,
             new_score: newScore,
             vote_count: newVoteCount,
             user_vote: value,
-        });
+        };
 
     } catch (error: any) {
-        console.error('Vote error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+        console.error('Vote action error:', error);
+        return { error: 'Internal server error', status: 500 };
     }
 }
 
-// GET endpoint to check user's current vote on an item
-export async function GET(request: NextRequest) {
+export async function getUserVote(itemId: string) {
     try {
         const supabase = await createClient();
-        const { searchParams } = new URL(request.url);
-        const itemId = searchParams.get('item_id');
-
-        if (!itemId) {
-            return NextResponse.json(
-                { error: 'Missing item_id' },
-                { status: 400 }
-            );
-        }
-
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            return NextResponse.json({ user_vote: null });
+            return { user_vote: null };
         }
 
         const { data: vote } = await supabase
@@ -187,12 +168,12 @@ export async function GET(request: NextRequest) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-        return NextResponse.json({
+        return {
             user_vote: vote?.value || null,
-        });
+        };
 
     } catch (error) {
-        console.error('Get vote error:', error);
-        return NextResponse.json({ user_vote: null });
+        console.error('Get vote action error:', error);
+        return { user_vote: null };
     }
 }

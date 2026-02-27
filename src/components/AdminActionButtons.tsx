@@ -15,6 +15,9 @@ interface Tag {
     slug: string;
 }
 
+import { getTags } from '@/actions/tags';
+import { processAdminToolAction } from '@/actions/admin';
+
 export function AdminActionButtons({ id }: AdminActionButtonsProps) {
     const [isProcessing, setIsProcessing] = useState<'approve' | 'reject' | null>(null);
     const [showTagSelector, setShowTagSelector] = useState(false);
@@ -39,10 +42,9 @@ export function AdminActionButtons({ id }: AdminActionButtonsProps) {
     const fetchTags = async () => {
         setIsLoadingTags(true);
         try {
-            const res = await fetch('/api/tags');
-            const data = await res.json();
+            const data = await getTags();
             if (data.tags) {
-                setAvailableTags(data.tags);
+                setAvailableTags(data.tags as Tag[]);
             }
         } catch (error) {
             console.error('Error fetching tags:', error);
@@ -64,31 +66,24 @@ export function AdminActionButtons({ id }: AdminActionButtonsProps) {
         );
     };
 
+
     const handleAction = async (action: 'approve' | 'reject') => {
         if (action === 'reject' && !confirm('Are you sure you want to REJECT this tool?')) return;
 
-        // For approve, we just go ahead
         setIsProcessing(action);
         setShowTagSelector(false);
 
         try {
-            const response = await fetch('/api/admin/tool-action', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id,
-                    action,
-                    tags: action === 'approve' ? selectedTags : undefined
-                }),
-            });
+            const result = await processAdminToolAction(
+                id,
+                action,
+                action === 'approve' ? selectedTags : undefined
+            );
 
-            if (response.ok) {
+            if ('success' in result) {
                 router.refresh();
             } else {
-                const data = await response.json();
-                alert(`Error: ${data.error || 'Failed to process action'}`);
+                alert(`Error: ${result.error || 'Failed to process action'}`);
             }
         } catch (error) {
             console.error('Action error:', error);

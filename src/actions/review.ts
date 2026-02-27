@@ -1,28 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { ReviewSchema } from '@/lib/schemas';
+'use server';
 
-export async function POST(request: NextRequest) {
+import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { ReviewSchema, type ReviewInput } from '@/lib/schemas';
+import { revalidatePath } from 'next/cache';
+
+export async function submitReview(input: ReviewInput) {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            return NextResponse.json(
-                { error: 'Authentication required to submit reviews' },
-                { status: 401 }
-            );
+            return { error: 'Authentication required to submit reviews', status: 401 };
         }
 
-        const body = await request.json();
-
         // 0. STRUCTURAL VALIDATION (ZOD)
-        const validation = ReviewSchema.safeParse(body);
+        const validation = ReviewSchema.safeParse(input);
         if (!validation.success) {
-            return NextResponse.json(
-                { error: validation.error.issues[0].message },
-                { status: 400 }
-            );
+            return { error: validation.error.issues[0].message, status: 400 };
         }
         const { item_id, rating, comment } = validation.data;
 
@@ -39,11 +34,11 @@ export async function POST(request: NextRequest) {
         }
 
         if (existingReview) {
-            return NextResponse.json({ error: 'You have already reviewed this tool' }, { status: 400 });
+            return { error: 'You have already reviewed this tool', status: 400 };
         }
 
         // Insert review (starts as pending)
-        const cookieStore = await import('next/headers').then(mod => mod.cookies());
+        const cookieStore = await cookies();
         const sessionId = cookieStore.get('rbu_session_id')?.value;
 
         const { error: insertError } = await supabase
@@ -59,16 +54,19 @@ export async function POST(request: NextRequest) {
 
         if (insertError) {
             console.error('Supabase Review Insertion Error:', insertError);
-            // Handle unique constraint violation specifically
             if (insertError.code === '23505') {
-                return NextResponse.json({ error: 'You have already reviewed this tool' }, { status: 400 });
+                return { error: 'You have already reviewed this tool', status: 400 };
             }
-            return NextResponse.json({ error: insertError.message || 'Database error occurred' }, { status: 500 });
+            return { error: insertError.message || 'Database error occurred', status: 500 };
         }
 
-        return NextResponse.json({ success: true, message: 'Review submitted for moderation' });
+        // Revalidate the tool page to show the pending status if we ever add that, 
+        // or just to refresh the state.
+        revalidatePath(`/tool/${item_id}`);
+
+        return { success: true, message: 'Review submitted for moderation' };
     } catch (error: any) {
-        console.error('Review API Panic:', error);
-        return NextResponse.json({ error: 'Internal Server Error. Please ensure the tool ID is valid.' }, { status: 500 });
+        console.error('Review action error:', error);
+        return { error: 'Internal server error', status: 500 };
     }
 }

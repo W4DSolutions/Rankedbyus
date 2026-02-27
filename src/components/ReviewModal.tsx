@@ -7,6 +7,8 @@ import { StarRating } from './StarRating';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
+import { submitReview } from '@/actions/review';
+
 interface ReviewModalProps {
     itemId: string;
     itemName: string;
@@ -53,15 +55,15 @@ export function ReviewModal({ itemId, itemName, onSuccess, className, isAuthenti
         setError('');
 
         try {
-            const response = await fetch('/api/review', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ item_id: itemId, rating, comment }),
+            const result = await submitReview({
+                item_id: itemId,
+                rating,
+                comment,
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
+            if ('error' in result) {
+                setError(result.error || 'Failed to submit review');
+            } else {
                 setSuccess(true);
                 router.refresh();
                 setTimeout(() => {
@@ -71,8 +73,6 @@ export function ReviewModal({ itemId, itemName, onSuccess, className, isAuthenti
                     setRating(5);
                     onSuccess?.();
                 }, 2000);
-            } else {
-                setError(data.error || 'Failed to submit review');
             }
         } catch {
             setError('Something went wrong. Please try again.');
