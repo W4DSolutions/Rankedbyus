@@ -49,12 +49,17 @@ export async function submitVote(input: VoteInput) {
             return { error: 'High volume detected. Please try again tomorrow.', status: 429 };
         }
 
+        // 1. INITIALIZE CLIENTS
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSupabase = createAdminClient();
+
         // 1. GET SESSION & IDENTIFY EXISTING VOTE
         const cookieStore = await cookies();
         const sessionId = cookieStore.get('rbu_session_id')?.value;
 
         // More robust lookup: check by UID OR SessionID (if logged in, we check both to claim history)
-        let query = supabase
+        // We use Admin Client here to ensure we find the record regardless of RLS visibility
+        let query = adminSupabase
             .from('votes')
             .select('*')
             .eq('item_id', item_id);
@@ -74,11 +79,11 @@ export async function submitVote(input: VoteInput) {
         const { data: existingVotes, error: fetchError } = await query;
         if (fetchError) {
             console.error('Signal lookup failure:', fetchError);
-            return { error: 'Registry lookup failed', status: 500 };
+            return { error: 'Registry lookup failed. Please try again.', status: 500 };
         }
 
         // We might find two votes if the user voted anonymously and then logged in without claiming
-        // We prioritize the authenticated one, but logically there should only be one due to DB constraints
+        // We prioritize the authenticated one
         const existingVote = existingVotes && existingVotes.length > 0
             ? (existingVotes.find(v => v.user_id === user?.id) || existingVotes[0])
             : null;
@@ -86,18 +91,18 @@ export async function submitVote(input: VoteInput) {
         if (value === null) {
             // Remove signal
             if (existingVote) {
-                const { error: delError } = await supabase
+                const { error: delError } = await adminSupabase
                     .from('votes')
                     .delete()
                     .eq('id', existingVote.id);
                 if (delError) {
                     console.error('Delete error:', delError);
-                    throw new Error('Could not retract signal.');
+                    return { error: 'Could not retract signal from registry.', status: 500 };
                 }
             }
         } else if (existingVote) {
             // Update existing signal (and bridge user ID if it was anonymous)
-            const { error: updError } = await supabase
+            const { error: updError } = await adminSupabase
                 .from('votes')
                 .update({
                     value,
@@ -109,11 +114,11 @@ export async function submitVote(input: VoteInput) {
 
             if (updError) {
                 console.error('Update error:', updError);
-                throw new Error('Signal update rejected by registry.');
+                return { error: 'Signal update rejected by registry.', status: 500 };
             }
         } else {
             // New signal insertion
-            const { error: insError } = await supabase
+            const { error: insError } = await adminSupabase
                 .from('votes')
                 .insert({
                     item_id,
@@ -130,13 +135,13 @@ export async function submitVote(input: VoteInput) {
                 if ((insError as any).code === '23505') {
                     return { error: 'You have already contributed a signal for this asset.', status: 400 };
                 }
-                throw new Error('Signal induction failed.');
+                return { error: 'Signal induction failed. Registry refusal.', status: 500 };
             }
         }
 
         // 2. LOG THE ACTION FOR AUDIT (Silent Catch)
         try {
-            await supabase.from('vote_audit_logs').insert({
+            await adminSupabase.from('vote_audit_logs').insert({
                 item_id,
                 user_id: user.id,
                 action: value === null ? 'cancel' : value === 1 ? 'upvote' : 'downvote',
@@ -146,10 +151,7 @@ export async function submitVote(input: VoteInput) {
             console.warn('Audit Logging skipped:', e);
         }
 
-        // 3. Recalculate global score for UI return (USING ADMIN CLIENT)
-        const { createAdminClient } = await import('@/lib/supabase/admin');
-        const adminSupabase = createAdminClient();
-
+        // 3. Recalculate global score for UI return
         const { count: upvotes, error: upError } = await adminSupabase
             .from('votes')
             .select('*', { count: 'exact', head: true })
@@ -158,7 +160,7 @@ export async function submitVote(input: VoteInput) {
 
         if (upError) {
             console.error('Error counting upvotes:', upError);
-            throw new Error('Failed to verify new signal amplitude.');
+            return { error: 'Failed to verify new signal amplitude.', status: 500 };
         }
 
         const { count: downvotes, error: downError } = await adminSupabase
@@ -169,7 +171,7 @@ export async function submitVote(input: VoteInput) {
 
         if (downError) {
             console.error('Error counting downvotes:', downError);
-            throw new Error('Failed to verify new signal amplitude.');
+            return { error: 'Failed to verify new signal amplitude.', status: 500 };
         }
 
         const newScore = (upvotes || 0) - (downvotes || 0);
@@ -182,7 +184,6 @@ export async function submitVote(input: VoteInput) {
         const { data: item } = await adminSupabase.from('items').select('slug').eq('id', item_id).single();
         if (item?.slug) {
             revalidatePath(`/tool/${item.slug}`);
-            // Recalculate rank based on final state? (Handled by refresh)
         }
 
         return {
@@ -193,8 +194,8 @@ export async function submitVote(input: VoteInput) {
         };
 
     } catch (error: any) {
-        console.error('Vote action error:', error);
-        return { error: 'Internal server error', status: 500 };
+        console.error('Vote action panic:', error);
+        return { error: error.message || 'Internal server error', status: 500 };
     }
 }
 
