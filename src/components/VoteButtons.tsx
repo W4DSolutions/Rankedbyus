@@ -27,8 +27,13 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
     const [prevInitial, setPrevInitial] = useState({ score: initialScore, count: initialVoteCount });
     if (initialScore !== prevInitial.score || initialVoteCount !== prevInitial.count) {
         setPrevInitial({ score: initialScore, count: initialVoteCount });
-        setScore(initialScore);
-        setVoteCount(initialVoteCount);
+
+        // ONLY update score/count if we are NOT currently in the middle of a vote
+        // This prevents stale props from a router.refresh() from overwriting our verified state
+        if (!isVoting) {
+            setScore(initialScore);
+            setVoteCount(initialVoteCount);
+        }
     }
 
     useEffect(() => {

@@ -109,35 +109,42 @@ export async function submitVote(input: VoteInput) {
             console.warn('Audit Logging skipped:', e);
         }
 
-        // 3. Recalculate score (Linear: Up - Down)
-        const { count: upvotes } = await supabase
+        // 3. Recalculate global score for UI return (USING ADMIN CLIENT)
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSupabase = createAdminClient();
+
+        const { count: upvotes, error: upError } = await adminSupabase
             .from('votes')
             .select('*', { count: 'exact', head: true })
             .eq('item_id', item_id)
             .eq('value', 1);
 
-        const { count: downvotes } = await supabase
+        if (upError) {
+            console.error('Error counting upvotes:', upError);
+            throw new Error('Failed to verify new signal amplitude.');
+        }
+
+        const { count: downvotes, error: downError } = await adminSupabase
             .from('votes')
             .select('*', { count: 'exact', head: true })
             .eq('item_id', item_id)
             .eq('value', -1);
 
+        if (downError) {
+            console.error('Error counting downvotes:', downError);
+            throw new Error('Failed to verify new signal amplitude.');
+        }
+
         const newScore = (upvotes || 0) - (downvotes || 0);
         const newVoteCount = (upvotes || 0) + (downvotes || 0);
 
-        // Update item score
-        await supabase
-            .from('items')
-            .update({
-                score: newScore,
-                vote_count: newVoteCount
-            })
-            .eq('id', item_id);
+        // Revalidate aggressively
+        revalidatePath('/', 'layout'); // Clears cache for all pages using the main layout
 
-        // Revalidate the pages that show this tool
-        revalidatePath('/');
-        revalidatePath(`/tool/${item_id}`); // Using ID might be wrong if it expects slug, but revalidatePath is greedy sometimes. 
-        // Better to revalidate the tags and categories too if we knew them.
+        const { data: item } = await adminSupabase.from('items').select('slug').eq('id', item_id).single();
+        if (item?.slug) {
+            revalidatePath(`/tool/${item.slug}`);
+        }
 
         return {
             success: true,

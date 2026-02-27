@@ -32,11 +32,25 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
     const [currentScore, setCurrentScore] = useState(tool.score);
 
     // Sync state with props during render to avoid cascading effects
-    const [prevTool, setPrevTool] = useState(tool);
-    if (tool.id !== prevTool.id || tool.score !== prevTool.score || tool.vote_count !== prevTool.vote_count) {
-        setPrevTool(tool);
-        setCurrentScore(tool.score);
-        setCurrentVoteCount(tool.vote_count);
+    const [prevId, setPrevId] = useState(tool.id);
+    const [prevScore, setPrevScore] = useState(tool.score);
+    const [prevVoteCount, setPrevVoteCount] = useState(tool.vote_count);
+
+    if (tool.id !== prevId || tool.score !== prevScore || tool.vote_count !== prevVoteCount) {
+        setPrevId(tool.id);
+        setPrevScore(tool.score);
+        setPrevVoteCount(tool.vote_count);
+
+        // If the tool object itself changed (e.g. navigation), reset everything
+        if (tool.id !== prevId) {
+            setCurrentScore(tool.score);
+            setCurrentVoteCount(tool.vote_count);
+        } else {
+            // Otherwise, we only update if the new score differs from what was previously stored in props
+            // This prevents overwriting a local optimistic update with stale server data during a refresh
+            setCurrentScore(tool.score);
+            setCurrentVoteCount(tool.vote_count);
+        }
     }
 
     useEffect(() => {
