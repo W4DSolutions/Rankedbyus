@@ -28,11 +28,15 @@ export async function submitVote(input: VoteInput) {
             '127.0.0.1';
         const userAgent = headersList.get('user-agent') || 'unknown';
 
-        // 1. GLOBAL RATE LIMIT CHECK (Max 50 votes per 24h per IP)
+        // 1. INITIALIZE CLIENTS
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const adminSupabase = createAdminClient();
+
+        // 2. GLOBAL RATE LIMIT CHECK (Max 50 votes per 24h per IP)
         const twentyFourHoursAgo = new Date();
         twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-        const { count: dayVoteCount } = await supabase
+        const { count: dayVoteCount } = await adminSupabase
             .from('vote_audit_logs')
             .select('*', { count: 'exact', head: true })
             .eq('ip_address', ipAddress)
@@ -40,7 +44,7 @@ export async function submitVote(input: VoteInput) {
             .gte('created_at', twentyFourHoursAgo.toISOString());
 
         if ((dayVoteCount || 0) >= 50) {
-            await supabase.from('vote_audit_logs').insert({
+            await adminSupabase.from('vote_audit_logs').insert({
                 ip_address: ipAddress,
                 user_agent: userAgent,
                 action: 'rate_limited',
@@ -49,9 +53,7 @@ export async function submitVote(input: VoteInput) {
             return { error: 'High volume detected. Please try again tomorrow.', status: 429 };
         }
 
-        // 1. INITIALIZE CLIENTS
-        const { createAdminClient } = await import('@/lib/supabase/admin');
-        const adminSupabase = createAdminClient();
+        // 3. GET SESSION & IDENTIFY EXISTING VOTE
 
         // 1. GET SESSION & IDENTIFY EXISTING VOTE
         const cookieStore = await cookies();
@@ -130,12 +132,16 @@ export async function submitVote(input: VoteInput) {
                 });
 
             if (insError) {
-                console.error('Insert error:', insError);
+                console.error('Registry Signal Induction Error:', insError);
                 // Check for unique violation (code 23505)
                 if ((insError as any).code === '23505') {
                     return { error: 'You have already contributed a signal for this asset.', status: 400 };
                 }
-                return { error: 'Signal induction failed. Registry refusal.', status: 500 };
+                // Return actual error details for debugging
+                return {
+                    error: `Signal induction failed: ${insError.message || 'Registry refusal'} (${(insError as any).code || 'unknown'})`,
+                    status: 500
+                };
             }
         }
 
