@@ -88,10 +88,11 @@ export function VoteButtons({ itemId, initialScore, initialVoteCount = 0, onVote
             }
 
             // Update with actual server truth
-            if (result.new_score !== undefined && result.vote_count !== undefined) {
+            if (result.success && result.new_score !== undefined) {
                 setScore(result.new_score);
-                setVoteCount(result.vote_count);
-                onVoteChange?.(result.new_score, result.vote_count);
+                setVoteCount(result.vote_count || optimisticCount);
+                // Propagate to parent IMMEDIATELY
+                onVoteChange?.(result.new_score, result.vote_count || optimisticCount);
             }
 
             router.refresh();

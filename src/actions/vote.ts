@@ -49,52 +49,89 @@ export async function submitVote(input: VoteInput) {
             return { error: 'High volume detected. Please try again tomorrow.', status: 429 };
         }
 
-        // Check if user already voted (strictly by user_id)
-        const { data: existingVote, error: checkError } = await supabase
+        // 1. GET SESSION & IDENTIFY EXISTING VOTE
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('rbu_session_id')?.value;
+
+        // More robust lookup: check by UID OR SessionID (if logged in, we check both to claim history)
+        let query = supabase
             .from('votes')
             .select('*')
-            .eq('item_id', item_id)
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('item_id', item_id);
 
-        if (checkError) {
-            console.error('Check existing vote error:', checkError);
-            return { error: 'Failed to verify existing signal status.', status: 500 };
+        if (user) {
+            if (sessionId) {
+                query = query.or(`user_id.eq.${user.id},session_id.eq.${sessionId}`);
+            } else {
+                query = query.eq('user_id', user.id);
+            }
+        } else if (sessionId) {
+            query = query.eq('session_id', sessionId).is('user_id', null);
+        } else {
+            return { error: 'Signal authentication required', status: 401 };
         }
 
+        const { data: existingVotes, error: fetchError } = await query;
+        if (fetchError) {
+            console.error('Signal lookup failure:', fetchError);
+            return { error: 'Registry lookup failed', status: 500 };
+        }
+
+        // We might find two votes if the user voted anonymously and then logged in without claiming
+        // We prioritize the authenticated one, but logically there should only be one due to DB constraints
+        const existingVote = existingVotes && existingVotes.length > 0
+            ? (existingVotes.find(v => v.user_id === user?.id) || existingVotes[0])
+            : null;
+
         if (value === null) {
-            // Remove vote
+            // Remove signal
             if (existingVote) {
-                await supabase
+                const { error: delError } = await supabase
                     .from('votes')
                     .delete()
                     .eq('id', existingVote.id);
+                if (delError) {
+                    console.error('Delete error:', delError);
+                    throw new Error('Could not retract signal.');
+                }
             }
         } else if (existingVote) {
-            // Update existing vote
-            await supabase
+            // Update existing signal (and bridge user ID if it was anonymous)
+            const { error: updError } = await supabase
                 .from('votes')
                 .update({
                     value,
+                    user_id: user?.id || existingVote.user_id,
                     ip_address: ipAddress,
-                    user_id: user.id
+                    session_id: sessionId || existingVote.session_id
                 })
                 .eq('id', existingVote.id);
-        } else {
-            // Insert new vote
-            const cookieStore = await cookies();
-            const sessionId = cookieStore.get('rbu_session_id')?.value;
 
-            await supabase
+            if (updError) {
+                console.error('Update error:', updError);
+                throw new Error('Signal update rejected by registry.');
+            }
+        } else {
+            // New signal insertion
+            const { error: insError } = await supabase
                 .from('votes')
                 .insert({
                     item_id,
-                    user_id: user.id,
+                    user_id: user?.id || null,
                     session_id: sessionId || null,
                     ip_address: ipAddress,
                     user_agent: userAgent,
                     value
                 });
+
+            if (insError) {
+                console.error('Insert error:', insError);
+                // Check for unique violation (code 23505)
+                if ((insError as any).code === '23505') {
+                    return { error: 'You have already contributed a signal for this asset.', status: 400 };
+                }
+                throw new Error('Signal induction failed.');
+            }
         }
 
         // 2. LOG THE ACTION FOR AUDIT (Silent Catch)
@@ -139,11 +176,13 @@ export async function submitVote(input: VoteInput) {
         const newVoteCount = (upvotes || 0) + (downvotes || 0);
 
         // Revalidate aggressively
-        revalidatePath('/', 'layout'); // Clears cache for all pages using the main layout
+        revalidatePath('/', 'layout');
 
+        // Also revalidate the specific entity if possible
         const { data: item } = await adminSupabase.from('items').select('slug').eq('id', item_id).single();
         if (item?.slug) {
             revalidatePath(`/tool/${item.slug}`);
+            // Recalculate rank based on final state? (Handled by refresh)
         }
 
         return {

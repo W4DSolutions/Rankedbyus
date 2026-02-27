@@ -37,19 +37,22 @@ export function ToolCard({ tool, rank, showCategory, priority }: ToolCardProps) 
     const [prevVoteCount, setPrevVoteCount] = useState(tool.vote_count);
 
     if (tool.id !== prevId || tool.score !== prevScore || tool.vote_count !== prevVoteCount) {
-        setPrevId(tool.id);
-        setPrevScore(tool.score);
-        setPrevVoteCount(tool.vote_count);
-
-        // If the tool object itself changed (e.g. navigation), reset everything
+        // If the tool object itself changed (ID), reset everything
         if (tool.id !== prevId) {
+            setPrevId(tool.id);
+            setPrevScore(tool.score);
+            setPrevVoteCount(tool.vote_count);
             setCurrentScore(tool.score);
             setCurrentVoteCount(tool.vote_count);
         } else {
-            // Otherwise, we only update if the new score differs from what was previously stored in props
-            // This prevents overwriting a local optimistic update with stale server data during a refresh
-            setCurrentScore(tool.score);
-            setCurrentVoteCount(tool.vote_count);
+            // If just score/count changed in props, only update if it's NO LONGER STALE
+            // Note: We are a bit more lenient here, assuming router.refresh will eventually stabilize
+            if (tool.score !== prevScore || tool.vote_count !== prevVoteCount) {
+                setPrevScore(tool.score);
+                setPrevVoteCount(tool.vote_count);
+                setCurrentScore(tool.score);
+                setCurrentVoteCount(tool.vote_count);
+            }
         }
     }
 
