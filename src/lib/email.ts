@@ -6,7 +6,9 @@ import { Resend } from 'resend';
  */
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key');
-const IS_DEV = !process.env.RESEND_API_KEY;
+// In development, default to mock console logs to avoid "Domain Not Verified" errors
+// unless the developer explicitly wants to test real delivery.
+const IS_DEV = process.env.NODE_ENV === 'development' || !process.env.RESEND_API_KEY;
 
 interface EmailOptions {
   to: string;
