@@ -111,34 +111,42 @@ export async function submitTool(input: SubmitToolInput) {
         const cookieStore = await cookies();
         const sessionId = cookieStore.get('rbu_session_id')?.value;
 
-        // Insert item with pending status
         const finalSubmitterEmail = user?.email || submitter_email || null;
+
+        // Create the item payload
+        const itemPayload = {
+            category_id: categoryData.id,
+            name,
+            slug,
+            description: description || '',
+            website_url,
+            affiliate_link: website_url,
+            logo_url: logo_url || `https://placehold.co/80x80/334155/white?text=${name.charAt(0).toUpperCase()}`,
+            status: 'pending',
+            score: 0,
+            vote_count: 0,
+            user_id: user?.id || null,
+            submitter_email: finalSubmitterEmail,
+            transaction_id: paymentDetail.transactionId,
+            payment_amount: parseFloat(paymentDetail.amount || '0'),
+            payment_status: 'paid',
+            session_id: sessionId || null
+        };
+
+        console.log('Sending tool submission to Registry:', itemPayload);
+
         const { data: newItem, error: insertError } = await supabase
             .from('items')
-            .insert({
-                category_id: categoryData.id,
-                name,
-                slug,
-                description: description || '',
-                website_url,
-                affiliate_link: website_url,
-                logo_url: logo_url || `https://placehold.co/80x80/334155/white?text=${name.charAt(0).toUpperCase()}`,
-                status: 'pending',
-                score: 0,
-                vote_count: 0,
-                user_id: user?.id || null,
-                submitter_email: finalSubmitterEmail,
-                transaction_id: paymentDetail.transactionId,
-                payment_amount: parseFloat(paymentDetail.amount),
-                payment_status: 'paid',
-                session_id: sessionId || null
-            })
+            .insert(itemPayload)
             .select()
             .single();
 
         if (insertError) {
-            console.error('Insert error:', insertError);
-            return { error: 'Failed to submit tool', status: 500 };
+            console.error('Registry Submission Refusal:', insertError);
+            return {
+                error: `Registry insertion failed: ${insertError.message} (${insertError.code})`,
+                status: 500
+            };
         }
 
         // --- EMAIL NOTIFICATIONS ---

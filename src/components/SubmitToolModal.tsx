@@ -520,7 +520,15 @@ export function SubmitToolModal({ className, children }: SubmitToolModalProps) {
                                             </p>
                                         </div>
 
-                                        <div className="min-h-[150px]">
+                                        <div className="min-h-[150px] space-y-4">
+                                            {process.env.NODE_ENV === 'development' && (
+                                                <button
+                                                    onClick={() => handlePaymentSuccess('TEST_BYPASS_CLAIM_LOGIC')}
+                                                    className="w-full py-3 rounded-xl bg-amber-500/10 border border-dashed border-amber-500/50 text-amber-600 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all mb-4"
+                                                >
+                                                    [DEV] Simulate Test Payment (Bypass PayPal)
+                                                </button>
+                                            )}
                                             <PayPalScriptProvider options={{ "clientId": process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb", currency: "USD" }}>
                                                 {isSubmitting ? (
                                                     <div className="flex flex-col items-center justify-center py-12 gap-4">
