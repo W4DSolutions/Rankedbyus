@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
 
         if (fetchError || !tool) throw new Error('Tool not found');
 
-        // REAL AI LOGIC with Gemini
+        // 2. AI GENERATION
         const { generateToolDescription } = await import('@/lib/ai');
-        const { data: category } = await supabase
+        const { data: categoryData } = await supabase
             .from('categories')
             .select('name')
             .eq('id', tool.category_id)
@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
         const aiData = await generateToolDescription(
             tool.name,
             tool.website_url,
-            category?.name || 'General AI'
+            categoryData?.name || 'General AI'
         );
 
         const strategicHook = aiData.description;
 
-        // Update tool with AI-enhanced data
+        // 3. UPDATE TOOL
         const { error: updateError } = await supabase
             .from('items')
             .update({
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
         if (updateError) throw updateError;
 
-        // Auto-assign Tags if they exist
+        // 4. TAGGING
         if (aiData.tags && aiData.tags.length > 0) {
             const { slugify } = await import('@/lib/utils');
 
