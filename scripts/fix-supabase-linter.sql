@@ -8,9 +8,6 @@
 -- to execute arbitrary code within these functions.
 ALTER FUNCTION public.sync_item_vote_stats() SET search_path = public;
 ALTER FUNCTION public.increment_article_view(uuid) SET search_path = public;
-ALTER FUNCTION public.sync_item_review_stats() SET search_path = public;
-ALTER FUNCTION public.increment_review_helpful(uuid) SET search_path = public;
-ALTER FUNCTION public.increment_click_count(uuid) SET search_path = public;
 
 -- 2. Fix "RLS Enabled No Policy" for article_views
 -- Deny read/write to the public; Admin service_role will still bypass this.
